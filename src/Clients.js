@@ -122,7 +122,7 @@ function Clients() {
                           <li className="text-gray-500">No bookings in this date range.</li>
                         ) : filtered.map(b => (
                           <li key={b._id} className="text-gray-700">
-                            <span className="font-medium">{b.checkIn.slice(0,10)}</span> to <span className="font-medium">{b.checkOut.slice(0,10)}</span> | Guests: {b.guests} | Price: <span className="font-medium">${b.price}</span> | {b.paid ? <span className="status-paid">Paid</span> : <span className="status-unpaid">Not Paid</span>}
+                            <span className="font-medium">{b.checkIn.slice(0,10)}</span> to <span className="font-medium">{b.checkOut.slice(0,10)}</span> | Guests: {b.guests} | Price: <span className="font-medium">${b.price}</span> | Advance: <span className="font-medium">${b.advance || 0}</span> | Due: <span className="font-medium">${b.price - (b.advance || 0)}</span> | {b.paid ? <span className="status-paid">Paid</span> : <span className="status-unpaid">Not Paid</span>}
                             {b.specialNote && <span className="text-gray-500 text-xs italic"> — {b.specialNote}</span>}
                           </li>
                         ))}
@@ -170,7 +170,7 @@ function Clients() {
                           {b.checkIn.slice(0,10)} to {b.checkOut.slice(0,10)} | Guests: {b.guests}
                         </div>
                         <div className="booking-details">
-                          Price: <span className="font-semibold">${b.price}</span> | Status: <span className={b.paid ? 'status-paid' : 'status-unpaid'}>{b.paid ? 'Paid' : 'Not Paid'}</span>
+                          Price: <span className="font-semibold">${b.price}</span> | Advance: <span className="font-semibold">${b.advance || 0}</span> | Due: <span className="font-semibold">${b.price - (b.advance || 0)}</span> | Status: <span className={b.paid ? 'status-paid' : 'status-unpaid'}>{b.paid ? 'Paid' : 'Not Paid'}</span>
                         </div>
                         <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
                       </div>
