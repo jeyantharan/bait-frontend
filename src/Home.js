@@ -19,6 +19,7 @@ function Home() {
   const [bookings, setBookings] = useState([]);
   const [bookingForm, setBookingForm] = useState({
     clientName: '',
+    phone: '',
     bookingDate: '',
     checkIn: '',
     checkOut: '',
@@ -125,6 +126,7 @@ function Home() {
     printWindow.document.write('</head><body>');
     printWindow.document.write(`<h2>Booking Details</h2>`);
     printWindow.document.write(`<div><strong>Client Name:</strong> ${booking.clientName}</div>`);
+    printWindow.document.write(`<div><strong>Phone:</strong> ${booking.phone || ''}</div>`);
     printWindow.document.write(`<div><strong>Booking Date:</strong> ${booking.bookingDate ? booking.bookingDate.slice(0,10) : ''}</div>`);
     printWindow.document.write(`<div><strong>Check In:</strong> ${booking.checkIn.slice(0,10)}</div>`);
     printWindow.document.write(`<div><strong>Check Out:</strong> ${booking.checkOut.slice(0,10)}</div>`);
@@ -306,7 +308,7 @@ function Home() {
                     setBookingSuccess('');
 
                     // Basic validation
-                    const requiredFields = ['clientName', 'bookingDate', 'checkIn', 'checkOut', 'price', 'advance', 'paymentMethod', 'guests'];
+                    const requiredFields = ['clientName', 'phone', 'bookingDate', 'checkIn', 'checkOut', 'price', 'advance', 'paymentMethod', 'guests'];
                     const missingFields = requiredFields.filter(field => !bookingForm[field]);
 
                     if (missingFields.length > 0) {
@@ -361,7 +363,7 @@ function Home() {
                         setBookingSuccess('Booking created successfully!');
                       }
                       setBookingForm({
-                        clientName: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: ''
+                        clientName: '', phone: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: ''
                       });
                       // Refresh bookings
                       const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
@@ -380,6 +382,18 @@ function Home() {
                       value={bookingForm.clientName} 
                       onChange={e => setBookingForm(f => ({ ...f, clientName: e.target.value }))} 
                       placeholder="Enter client's full name"
+                    />
+                  </div>
+                  <div className="form-group vertical">
+                    <label className="input-label">Phone Number</label>
+                    <input
+                      type="tel"
+                      className="input-field"
+                      value={bookingForm.phone}
+                      onChange={e => setBookingForm(f => ({ ...f, phone: e.target.value }))}
+                      placeholder="Enter phone number"
+                      pattern="[0-9+\-() ]*"
+                      maxLength={20}
                     />
                   </div>
                   <div className="form-group vertical">
@@ -453,6 +467,7 @@ function Home() {
                                       <div className="font-semibold text-red-700 flex-shrink-0 w-28">{dateStr}</div>
                                       <div className="flex-1">
                                         <div className="font-bold text-black">{booking?.clientName || bookedDateInfo[dateStr]}</div>
+                                        {booking?.phone && <div className="text-xs text-gray-700">Phone: {booking.phone}</div>}
                                         <div className="text-xs text-gray-700">Check-in: {booking?.checkIn?.slice(0,10)} | Check-out: {booking?.checkOut?.slice(0,10)}</div>
                                         <div className="text-xs text-gray-700">Guests: {booking?.guests} | Price: ${booking?.price} | Advance: ${booking?.advance || 0} | Due: ${booking ? booking.price - (booking.advance || 0) : ''}</div>
                                         <div className="text-xs mt-1">
@@ -546,7 +561,7 @@ function Home() {
                     </button>
       
                     {editingBooking && (
-                      <button type="button" className="btn btn-secondary flex-1" onClick={() => { setEditingBooking(null); setBookingForm({ clientName: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: '' }); }}>
+                      <button type="button" className="btn btn-secondary flex-1" onClick={() => { setEditingBooking(null); setBookingForm({ clientName: '', phone: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: '' }); }}>
                         Cancel Edit
                       </button>
                     )}
@@ -657,6 +672,7 @@ function Home() {
                                 setEditingBooking(b._id);
                                 setBookingForm({
                                   clientName: b.clientName,
+                                  phone: b.phone || '',
                                   bookingDate: b.bookingDate ? b.bookingDate.slice(0,10) : '',
                                   checkIn: b.checkIn ? b.checkIn.slice(0,10) : '',
                                   checkOut: b.checkOut ? b.checkOut.slice(0,10) : '',
