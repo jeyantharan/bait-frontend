@@ -222,14 +222,18 @@ function Home() {
       {showModal && selectedApartment && (
         <div className="modal-overlay">
           <div className="modal">
-            <div className="modal-header">
+            {/* MODAL HEADER - ADJUSTED FOR RESPONSIVENESS */}
+            <div className="modal-header flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              {/* Apartment Title */}
               <div>
                 <h3 className="text-3xl font-bold">{selectedApartment.name}</h3>
-                <p className="text-gray-400">Manage bookings for this apartment</p>
+                <p className="text-gray-400 text-sm">Manage bookings for this apartment</p>
               </div>
-              <div className="modal-actions flex-col sm:flex-row items-center gap-2"> {/* Added flex-col for small screens */}
+
+              {/* Action Buttons (Client History & Close) */}
+              <div className="flex flex-col sm:flex-row items-center gap-2 mt-2 sm:mt-0"> {/* Adjusted margin-top */}
                 <button
-                  className="btn btn-yellow"
+                  className="btn btn-yellow w-full sm:w-auto" // Full width on mobile, auto on sm+
                   onClick={() => {
                     setShowModal(false);
                     navigate('/clients');
@@ -242,12 +246,13 @@ function Home() {
                 </button>
               </div>
             </div>
+            {/* END MODAL HEADER */}
+
             <div className="modal-content">
-              {/* Added flex-col for small screens, and larger gap on medium+ screens */}
               <div className="flex flex-col md:flex-row gap-6"> 
                 {/* Booking Form */}
                 <form
-                  className="flex flex-col gap-4 w-full md:w-1/2" // Added width classes
+                  className="flex flex-col gap-4 w-full md:w-1/2" 
                   onSubmit={async (e) => {
                     e.preventDefault();
                     setBookingError('');
@@ -314,43 +319,90 @@ function Home() {
                   }}
                 >
                   <div className="form-group vertical">
-                    <label>Client Name</label>
-                    <input className="form-control" value={bookingForm.clientName} onChange={e => setBookingForm(f => ({ ...f, clientName: e.target.value }))} />
+                    <label className="input-label">Client Name</label>
+                    <input 
+                      className="input-field" 
+                      value={bookingForm.clientName} 
+                      onChange={e => setBookingForm(f => ({ ...f, clientName: e.target.value }))} 
+                      placeholder="Enter client's full name"
+                    />
                   </div>
                   <div className="form-group vertical">
-                    <label>Booking Date</label>
-                    <input type="date" className="form-control" value={bookingForm.bookingDate} onChange={e => setBookingForm(f => ({ ...f, bookingDate: e.target.value }))} />
+                    <label className="input-label">Booking Date</label>
+                    <input 
+                      type="date" 
+                      className="input-field" 
+                      value={bookingForm.bookingDate} 
+                      onChange={e => setBookingForm(f => ({ ...f, bookingDate: e.target.value }))} 
+                    />
                   </div>
                   <div className="form-group vertical">
-                    <label>Check In</label>
-                    <input type="date" className="form-control" value={bookingForm.checkIn} onChange={e => setBookingForm(f => ({ ...f, checkIn: e.target.value }))} />
+                    <label className="input-label">Check In</label>
+                    <input 
+                      type="date" 
+                      className="input-field" 
+                      value={bookingForm.checkIn} 
+                      onChange={e => setBookingForm(f => ({ ...f, checkIn: e.target.value }))} 
+                    />
                   </div>
                   <div className="form-group vertical">
-                    <label>Check Out</label>
-                    <input type="date" className="form-control" value={bookingForm.checkOut} onChange={e => setBookingForm(f => ({ ...f, checkOut: e.target.value }))} />
+                    <label className="input-label">Check Out</label>
+                    <input 
+                      type="date" 
+                      className="input-field" 
+                      value={bookingForm.checkOut} 
+                      onChange={e => setBookingForm(f => ({ ...f, checkOut: e.target.value }))} 
+                    />
                   </div>
                   <div className="form-group vertical">
-                    <label>Price</label>
-                    <input type="number" className="form-control" value={bookingForm.price} onChange={e => setBookingForm(f => ({ ...f, price: e.target.value }))} />
+                    <label className="input-label">Price ($)</label>
+                    <input 
+                      type="number" 
+                      className="input-field" 
+                      value={bookingForm.price} 
+                      onChange={e => setBookingForm(f => ({ ...f, price: e.target.value }))} 
+                      placeholder="e.g., 250.00"
+                    />
                   </div>
                   <div className="form-group vertical">
-                    <label>Payment Method</label>
-                    <input className="form-control" value={bookingForm.paymentMethod} onChange={e => setBookingForm(f => ({ ...f, paymentMethod: e.target.value }))} />
+                    <label className="input-label">Payment Method</label>
+                    <input 
+                      className="input-field" 
+                      value={bookingForm.paymentMethod} 
+                      onChange={e => setBookingForm(f => ({ ...f, paymentMethod: e.target.value }))} 
+                      placeholder="e.g., Cash, Card, Bank Transfer"
+                    />
                   </div>
                   <div className="form-group vertical">
-                    <label>Paid Status</label>
-                    <select className="form-control" value={bookingForm.paid} onChange={e => setBookingForm(f => ({ ...f, paid: e.target.value === 'true' }))}>
+                    <label className="input-label">Paid Status</label>
+                    <select 
+                      className="input-field" 
+                      value={bookingForm.paid} 
+                      onChange={e => setBookingForm(f => ({ ...f, paid: e.target.value === 'true' }))}
+                    >
                       <option value={false}>Not Paid</option>
                       <option value={true}>Paid</option>
                     </select>
                   </div>
                   <div className="form-group vertical">
-                    <label>Number of Guests</label>
-                    <input type="number" min="1" className="form-control" value={bookingForm.guests} onChange={e => setBookingForm(f => ({ ...f, guests: e.target.value }))} />
+                    <label className="input-label">Number of Guests</label>
+                    <input 
+                      type="number" 
+                      min="1" 
+                      className="input-field" 
+                      value={bookingForm.guests} 
+                      onChange={e => setBookingForm(f => ({ ...f, guests: e.target.value }))} 
+                      placeholder="e.g., 2"
+                    />
                   </div>
                   <div className="form-group vertical">
-                    <label>Special Note</label>
-                    <textarea className="form-control" value={bookingForm.specialNote} onChange={e => setBookingForm(f => ({ ...f, specialNote: e.target.value }))} />
+                    <label className="input-label">Special Note</label>
+                    <textarea 
+                      className="input-field h-24 resize-y" // Added h-24 for fixed height, resize-y for vertical resize
+                      value={bookingForm.specialNote} 
+                      onChange={e => setBookingForm(f => ({ ...f, specialNote: e.target.value }))} 
+                      placeholder="Any specific requests or details..."
+                    />
                   </div>
                   <div className="flex gap-2 mt-2">
                     <button type="submit" className="btn btn-primary flex-1">
