@@ -21,7 +21,7 @@ function Clients() {
   const fetchGroups = async (searchTerm = '') => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5001/api/bookings/clients/by-apartment', {
+      const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings/clients/by-apartment', {
         params: { search: searchTerm }
       });
       setGroups(res.data);
