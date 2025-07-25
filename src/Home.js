@@ -26,6 +26,7 @@ function Home() {
     price: '',
     advance: '',
     paymentMethod: '',
+    paymentDate: '',
     paid: false,
     specialNote: '',
     guests: ''
@@ -38,7 +39,7 @@ function Home() {
   const [bookingSearch, setBookingSearch] = useState('');
   const [hoveredDate, setHoveredDate] = useState(null);
   const [hoveredBooking, setHoveredBooking] = useState(null);
-  const BOOKINGS_PER_PAGE = 3;
+  const BOOKINGS_PER_PAGE = 8;
   const [selectedDateBookings, setSelectedDateBookings] = useState([]);
   const [showDateModal, setShowDateModal] = useState(false);
   const [showRangeModal, setShowRangeModal] = useState(false);
@@ -48,6 +49,13 @@ function Home() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentError, setPaymentError] = useState('');
   const [paymentSuccess, setPaymentSuccess] = useState('');
+  const [showPaymentsModal, setShowPaymentsModal] = useState(false);
+  const [paymentsBooking, setPaymentsBooking] = useState(null);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [newPayment, setNewPayment] = useState({ date: '', amount: '', method: '', note: '' });
+  const [paymentModalError, setPaymentModalError] = useState('');
+  const [paymentModalSuccess, setPaymentModalSuccess] = useState('');
+  const [isEditingPayment, setIsEditingPayment] = useState(null);
 
   const fetchApartments = async (pageNum = 1, searchTerm = '') => {
     try {
@@ -132,10 +140,10 @@ function Home() {
     printWindow.document.write(`<div><strong>Check Out:</strong> ${booking.checkOut.slice(0,10)}</div>`);
     printWindow.document.write(`<div><strong>Guests:</strong> ${booking.guests}</div>`);
     printWindow.document.write(`<div><strong>Price:</strong> $${booking.price}</div>`);
-    printWindow.document.write(`<div><strong>Advance:</strong> $${booking.advance || 0}</div>`);
-    printWindow.document.write(`<div><strong>Due:</strong> $${booking.price - (booking.advance || 0)}</div>`);
-    printWindow.document.write(`<div><strong>Payment Method:</strong> ${booking.paymentMethod}</div>`);
-    printWindow.document.write(`<div><strong>Status:</strong> ${booking.paid ? 'Paid' : 'Not Paid'}</div>`);
+    const totalPaid = booking.payments && booking.payments.length > 0 ? booking.payments.reduce((sum, p) => sum + Number(p.amount), 0) : 0;
+    printWindow.document.write(`<div><strong>Paid:</strong> $${totalPaid}</div>`);
+    printWindow.document.write(`<div><strong>Due:</strong> $${booking.paid ? 0 : (booking.price - totalPaid)}</div>`);
+    printWindow.document.write(`<div><strong>Status:</strong> ${((Math.abs(Number(totalPaid) - Number(booking.price)) < 0.01) || (Number(totalPaid) > Number(booking.price))) ? 'Paid' : 'Not Paid'}</div>`);
     printWindow.document.write(`<div><strong>Special Note:</strong> ${booking.specialNote || 'N/A'}</div>`);
     printWindow.document.write('</body></html>');
     printWindow.document.close();
@@ -165,6 +173,10 @@ function Home() {
     const checkOutDate = new Date(bookingForm.checkOut);
     const allDates = getDatesInRange(checkInDate, checkOutDate);
     bookings.forEach(b => {
+      // Skip the current booking being edited when checking for conflicts
+      if (editingBooking && b._id === editingBooking) {
+        return;
+      }
       const bStart = new Date(b.checkIn);
       const bEnd = new Date(b.checkOut);
       let d = new Date(bStart);
@@ -179,6 +191,37 @@ function Home() {
     hasBookedDates = bookedDatesInRange.length > 0;
   }
 
+  // Add a helper to calculate totalPaid for a booking
+  function getTotalPaid(booking) {
+    if (booking.payments && booking.payments.length > 0) {
+      return booking.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    }
+    return 0;
+  }
+
+  // Add a helper for due amount
+  function getDue(booking) {
+    if (booking.paid) return 0;
+    return Number(booking.price) - getTotalPaid(booking);
+  }
+
+  // Helper to check if booking is fully paid
+  function isBookingPaid(booking) {
+    const totalPaid = getTotalPaid(booking);
+    const price = Number(booking.price);
+    return Math.abs(Number(totalPaid) - price) < 0.01 || Number(totalPaid) > price;
+  }
+
+  const WhatsAppIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="16" height="16" fill="currentColor">
+      <path d="M16 3C9.373 3 4 8.373 4 15c0 2.385.832 4.584 2.236 6.37L4 29l7.824-2.05A12.94 12.94 0 0016 27c6.627 0 12-5.373 12-12S22.627 3 16 3zm0 22.917c-2.07 0-4.09-.54-5.84-1.56l-.417-.25-4.65 1.22 1.24-4.52-.27-.44A9.93 9.93 0 016.083 15c0-5.477 4.44-9.917 9.917-9.917S25.917 9.523 25.917 15 21.477 25.917 16 25.917zm5.13-7.13c-.28-.14-1.65-.81-1.9-.9-.25-.09-.43-.14-.61.14-.18.28-.7.9-.86 1.08-.16.18-.32.2-.6.07-.28-.14-1.18-.44-2.25-1.4-.83-.74-1.39-1.65-1.55-1.93-.16-.28-.02-.43.12-.57.13-.13.28-.32.42-.48.14-.16.18-.28.28-.46.09-.18.05-.34-.02-.48-.07-.14-.61-1.47-.84-2.01-.22-.53-.45-.46-.62-.47-.16-.01-.34-.01-.52-.01-.18 0-.48.07-.73.34-.25.27-.97.95-.97 2.3 0 1.35.99 2.65 1.13 2.83.14.18 1.95 2.98 4.73 4.06.66.28 1.18.45 1.58.58.66.21 1.26.18 1.73.11.53-.08 1.65-.67 1.88-1.32.23-.65.23-1.2.16-1.32-.07-.12-.25-.19-.53-.33z"/>
+    </svg>
+  );
+
+  // Compute displayPayments for payment portal
+  const displayPayments = (paymentHistory && paymentHistory.length > 0)
+    ? paymentHistory
+    : [];
 
   return (
     <div className="min-h-screen bg-white text-black py-8">
@@ -308,9 +351,12 @@ function Home() {
                     setBookingSuccess('');
 
                     // Basic validation
-                    const requiredFields = ['clientName', 'phone', 'bookingDate', 'checkIn', 'checkOut', 'price', 'advance', 'paymentMethod', 'guests'];
-                    const missingFields = requiredFields.filter(field => !bookingForm[field]);
-
+                    const requiredFields = ['clientName', 'phone', 'bookingDate', 'checkIn', 'checkOut', 'price', 'guests'];
+                    let missingFields = requiredFields.filter(field => !bookingForm[field]);
+                    // Only require paymentDate if advance is entered
+                    if (bookingForm.advance && Number(bookingForm.advance) > 0) {
+                      if (!bookingForm.paymentDate) missingFields.push('paymentDate');
+                    }
                     if (missingFields.length > 0) {
                         setBookingError(`Please fill all required fields: ${missingFields.join(', ')}.`);
                         return;
@@ -363,7 +409,7 @@ function Home() {
                         setBookingSuccess('Booking created successfully!');
                       }
                       setBookingForm({
-                        clientName: '', phone: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: ''
+                        clientName: '', phone: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: '', paymentDate: ''
                       });
                       // Refresh bookings
                       const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
@@ -456,6 +502,10 @@ function Home() {
                                   const dateStr = d.toISOString().slice(0,10);
                                   // Find the booking for this date
                                   const booking = bookings.find(b => {
+                                    // Skip the current booking being edited
+                                    if (editingBooking && b._id === editingBooking) {
+                                      return false;
+                                    }
                                     const bStart = new Date(b.checkIn);
                                     const bEnd = new Date(b.checkOut);
                                     bStart.setHours(0,0,0,0);
@@ -516,6 +566,16 @@ function Home() {
                     />
                   </div>
                   <div className="form-group vertical">
+                    <label className="input-label">Advance Payment Date</label>
+                    <input
+                      type="date"
+                      className="input-field"
+                      value={bookingForm.paymentDate}
+                      onChange={e => setBookingForm(f => ({ ...f, paymentDate: e.target.value }))}
+                      placeholder="Select advance payment date"
+                    />
+                  </div>
+                  <div className="form-group vertical">
                     <label className="input-label">Payment Method</label>
                     <input 
                       className="input-field" 
@@ -561,7 +621,7 @@ function Home() {
                     </button>
       
                     {editingBooking && (
-                      <button type="button" className="btn btn-secondary flex-1" onClick={() => { setEditingBooking(null); setBookingForm({ clientName: '', phone: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: '' }); }}>
+                      <button type="button" className="btn btn-secondary flex-1" onClick={() => { setEditingBooking(null); setBookingForm({ clientName: '', phone: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: '', paymentDate: '' }); }}>
                         Cancel Edit
                       </button>
                     )}
@@ -582,6 +642,10 @@ function Home() {
                         const clicked = new Date(date);
                         clicked.setHours(0,0,0,0);
                         const bookingsForDate = bookings.filter(b => {
+                          // Skip the current booking being edited
+                          if (editingBooking && b._id === editingBooking) {
+                            return false;
+                          }
                           const checkIn = new Date(b.checkIn);
                           const checkOut = new Date(b.checkOut);
                           checkIn.setHours(0,0,0,0);
@@ -594,6 +658,10 @@ function Home() {
                       tileContent={({ date, view }) => {
                         if (view === 'month') {
                           const foundBookings = bookings.filter(b => {
+                            // Skip the current booking being edited
+                            if (editingBooking && b._id === editingBooking) {
+                              return false;
+                            }
                             const checkIn = new Date(b.checkIn);
                             const checkOut = new Date(b.checkOut);
                             // Set hours to 0 to compare dates only
@@ -646,61 +714,90 @@ function Home() {
                       <p>No bookings found for this search.</p>
                     </div>
                   ) : (
-                    <ul className="mt-2 max-h-60 overflow-y-auto space-y-3 pr-2">
+                    <ul className="mt-2 space-y-3 pr-2">
                       {paginatedBookings.map(b => (
-                        <li key={b._id} className="booking-item flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                          <div className="booking-info">
-                            <div className="booking-name">{b.clientName}</div>
-                            <div className="booking-details">
-                              {b.checkIn.slice(0,10)} to {b.checkOut.slice(0,10)} | Guests: {b.guests}
+                        <li key={b._id} className="flex flex-col sm:flex-row items-center justify-between bg-gray-50 border border-gray-200 rounded-lg shadow p-2 mb-2 hover:shadow-lg transition group">
+                          {/* Left: Main Info */}
+                          <div className="flex-1 flex flex-col gap-0 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="font-bold text-base text-black truncate max-w-[120px]">{b.clientName}</span>
+                              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${isBookingPaid(b) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{isBookingPaid(b) ? 'Paid' : 'Not Paid'}</span>
                             </div>
-                            <div className="booking-details">
-                              Price: <span className="font-semibold">${b.price}</span> | Advance: <span className="font-semibold">${b.advance || 0}</span> | Due: <span className="font-semibold">${(b.price - (b.advance || 0))}</span> | Status: <span className={b.paid ? 'status-paid' : 'status-unpaid'}>{b.paid ? 'Paid' : 'Not Paid'}</span>
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                              <span className="flex items-center gap-1"><span role="img" aria-label="Calendar">📅</span> {b.checkIn.slice(0,10)} - {b.checkOut.slice(0,10)}</span>
+                              <span className="flex items-center gap-1"><span role="img" aria-label="Guests">👥</span> {b.guests}</span>
+                              {b.phone && <span className="flex items-center gap-1"><span role="img" aria-label="Phone">📞</span> {b.phone}</span>}
                             </div>
-                            <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
                           </div>
-                          <div className="booking-actions flex flex-col gap-1">
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => printBooking(b)}
-                            >
-                              Print
-                            </button>
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => {
-                                setEditingBooking(b._id);
-                                setBookingForm({
-                                  clientName: b.clientName,
-                                  phone: b.phone || '',
-                                  bookingDate: b.bookingDate ? b.bookingDate.slice(0,10) : '',
-                                  checkIn: b.checkIn ? b.checkIn.slice(0,10) : '',
-                                  checkOut: b.checkOut ? b.checkOut.slice(0,10) : '',
-                                  price: b.price,
-                                  advance: b.advance || '',
-                                  paymentMethod: b.paymentMethod,
-                                  paid: b.paid,
-                                  specialNote: b.specialNote,
-                                  guests: b.guests
-                                });
-                              }}
-                            >
-                              Edit
-                            </button>
-                            {!b.paid && (
+                          {/* Middle: Payment Info */}
+                          <div className="flex flex-col items-start sm:items-center gap-0.5 mx-0 sm:mx-4 mt-2 sm:mt-0">
+                            <span className="flex items-center gap-1 text-xs text-gray-700"><span role="img" aria-label="Money">💰</span> <span className="font-semibold">${b.price}</span></span>
+                            <span className="flex items-center gap-1 text-xs text-gray-700">Paid: <span className="font-semibold">${getTotalPaid(b)}</span></span>
+                            <span className="flex items-center gap-1 text-xs text-gray-700">Due: <span className="font-semibold">${getDue(b)}</span></span>
+                          </div>
+                          {/* Right: Actions - horizontal, small */}
+                          <div className="flex flex-row gap-1 mt-2 sm:mt-0 sm:ml-2 items-center">
+                            {b.phone && (
                               <button
-                                className="btn btn-yellow btn-sm font-semibold"
+                                title="Contact via WhatsApp"
                                 onClick={() => {
-                                  setPaymentBooking(b);
-                                  setPaymentAmount('');
-                                  setPaymentError('');
-                                  setPaymentSuccess('');
-                                  setShowPaymentModal(true);
+                                  const phone = b.phone.replace(/[^\d]/g, '');
+                                  window.open(`https://wa.me/${phone}`, '_blank');
                                 }}
+                                className="bg-green-500 hover:bg-green-600 text-white rounded-full p-1 shadow transition flex items-center justify-center text-xs"
+                                style={{ width: 28, height: 28 }}
                               >
-                                Record Payment
+                                <WhatsAppIcon />
                               </button>
                             )}
+                            <button title="Print" onClick={() => printBooking(b)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full p-1 shadow transition flex items-center justify-center text-xs" aria-label="Print" style={{ width: 28, height: 28 }}><span role="img" aria-label="Print">🖨️</span></button>
+                            <button title="Edit" onClick={() => {
+                              setEditingBooking(b._id);
+                              setBookingForm({
+                                clientName: b.clientName,
+                                phone: b.phone || '',
+                                bookingDate: b.bookingDate ? b.bookingDate.slice(0,10) : '',
+                                checkIn: b.checkIn ? b.checkIn.slice(0,10) : '',
+                                checkOut: b.checkOut ? b.checkOut.slice(0,10) : '',
+                                price: b.price,
+                                advance: b.advance || '',
+                                paymentMethod: b.paymentMethod,
+                                paid: b.paid,
+                                specialNote: b.specialNote,
+                                guests: b.guests,
+                                paymentDate: b.payments && b.payments.length > 0 ? b.payments[0].date : '' // Set paymentDate for editing
+                              });
+                            }} className="bg-blue-200 hover:bg-blue-300 text-blue-700 rounded-full p-1 shadow transition flex items-center justify-center text-xs" aria-label="Edit" style={{ width: 28, height: 28 }}><span role="img" aria-label="Edit">✏️</span></button>
+                            <button
+                              className="bg-yellow-400 hover:bg-yellow-500 text-black rounded-full p-1 shadow font-semibold transition flex items-center justify-center text-xs"
+                              title="Record Payment"
+                              onClick={() => {
+                                setPaymentsBooking(b);
+                                setPaymentHistory(b.payments || []);
+                                setShowPaymentsModal(true);
+                                setPaymentModalError('');
+                                setPaymentModalSuccess('');
+                                setIsEditingPayment(null);
+                                // Refresh bookings data to ensure we have the latest payment information
+                                axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                                  params: { apartmentId: selectedApartment._id }
+                                }).then(res => {
+                                  setBookings(res.data);
+                                  // Update the current booking with fresh data
+                                  const updatedBooking = res.data.find(booking => booking._id === b._id);
+                                  if (updatedBooking) {
+                                    setPaymentsBooking(updatedBooking);
+                                    setPaymentHistory(updatedBooking.payments || []);
+                                  }
+                                }).catch(err => {
+                                  console.error('Failed to refresh bookings:', err);
+                                });
+                              }}
+                              aria-label="Record Payment"
+                              style={{ width: 28, height: 28 }}
+                            >
+                              <span role="img" aria-label="Pay">💵</span>
+                            </button>
                           </div>
                         </li>
                       ))}
@@ -744,14 +841,90 @@ function Home() {
               {selectedDateBookings.length === 0 ? (
                 <div className="empty-state text-sm py-4">No bookings for this date.</div>
               ) : (
-                <ul className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                <ul className="space-y-4 pr-2">
                   {selectedDateBookings.map((b, idx) => (
-                    <li key={b._id || idx} className="booking-item">
-                      <div className="booking-name font-semibold">{b.clientName}</div>
-                      <div className="booking-details text-sm">{b.checkIn.slice(0,10)} to {b.checkOut.slice(0,10)} | Guests: {b.guests}</div>
-                      <div className="booking-details text-sm">Price: ${b.price} | Advance: ${b.advance || 0} | Due: ${b.price - (b.advance || 0)}</div>
-                      <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
-                      <div className="booking-details text-xs">Status: <span className={b.paid ? 'status-paid' : 'status-unpaid'}>{b.paid ? 'Paid' : 'Not Paid'}</span></div>
+                    <li key={b._id || idx} className="bg-white border rounded-lg shadow p-4 mb-3">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
+                        <div>
+                          <div className="font-bold text-lg text-black mb-1">{b.clientName}</div>
+                          <div className="text-xs text-gray-500 mb-1">Phone: {b.phone || 'N/A'}</div>
+                          <div className="text-xs text-gray-500 mb-1">Booking Date: {b.bookingDate ? b.bookingDate.slice(0,10) : 'N/A'}</div>
+                        </div>
+                        <div className="flex flex-col gap-1 text-xs text-gray-700">
+                          <div>Check In: <span className="font-semibold">{b.checkIn.slice(0,10)}</span></div>
+                          <div>Check Out: <span className="font-semibold">{b.checkOut.slice(0,10)}</span></div>
+                          <div>Guests: <span className="font-semibold">{b.guests}</span></div>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-4 text-xs text-gray-700 mb-2">
+                        <div>Price: <span className="font-semibold">${b.price}</span></div>
+                        <div>Paid: <span className="font-semibold">${getTotalPaid(b)}</span></div>
+                        <div>Due: <span className="font-semibold">${getDue(b)}</span></div>
+                      </div>
+                      <div className="mb-2 text-xs text-gray-700">Special Note: <span className="italic">{b.specialNote || 'N/A'}</span></div>
+                      <div className="flex items-center gap-2 mb-2">
+                        {isBookingPaid(b) ? (
+                          <span className="flex items-center gap-1"><span title='Paid' role='img' aria-label='Paid'>✅</span><span className="text-green-600 text-xs font-semibold">Paid</span></span>
+                        ) : (
+                          <span className="flex items-center gap-1"><span title='Not Paid' role='img' aria-label='Not Paid'>❌</span><span className="text-red-600 text-xs font-semibold">Not Paid</span></span>
+                        )}
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        {b.phone && (
+                          <button
+                            title="Contact via WhatsApp"
+                            onClick={() => {
+                              const phone = b.phone.replace(/[^\d]/g, '');
+                              window.open(`https://wa.me/${phone}`, '_blank');
+                            }}
+                            className="bg-green-500 hover:bg-green-600 text-white rounded-full p-2 text-xs font-semibold shadow transition flex items-center justify-center"
+                          >
+                            <WhatsAppIcon />
+                          </button>
+                        )}
+                        <button title="Print" onClick={() => printBooking(b)} className="btn btn-secondary btn-xs px-1"><span role="img" aria-label="Print">🖨️</span></button>
+                        <button title="Edit" onClick={() => {
+                          setEditingBooking(b._id);
+                          setBookingForm({
+                            clientName: b.clientName,
+                            phone: b.phone || '',
+                            bookingDate: b.bookingDate ? b.bookingDate.slice(0,10) : '',
+                            checkIn: b.checkIn ? b.checkIn.slice(0,10) : '',
+                            checkOut: b.checkOut ? b.checkOut.slice(0,10) : '',
+                            price: b.price,
+                            advance: b.advance || '',
+                            paymentMethod: b.paymentMethod,
+                            paid: b.paid,
+                            specialNote: b.specialNote,
+                            guests: b.guests,
+                            paymentDate: b.payments && b.payments.length > 0 ? b.payments[0].date : '' // Set paymentDate for editing
+                          });
+                          setShowDateModal(false);
+                        }} className="btn btn-secondary btn-xs px-1"><span role="img" aria-label="Edit">✏️</span></button>
+                        <button title="Record Payment" onClick={() => {
+                          setPaymentsBooking(b);
+                          setPaymentHistory(b.payments || []);
+                          setShowPaymentsModal(true);
+                          setPaymentModalError('');
+                          setPaymentModalSuccess('');
+                          setIsEditingPayment(null);
+                          setShowDateModal(false);
+                          // Refresh bookings data to ensure we have the latest payment information
+                          axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                            params: { apartmentId: selectedApartment._id }
+                          }).then(res => {
+                            setBookings(res.data);
+                            // Update the current booking with fresh data
+                            const updatedBooking = res.data.find(booking => booking._id === b._id);
+                            if (updatedBooking) {
+                              setPaymentsBooking(updatedBooking);
+                              setPaymentHistory(updatedBooking.payments || []);
+                            }
+                          }).catch(err => {
+                            console.error('Failed to refresh bookings:', err);
+                          });
+                        }} className="btn btn-yellow btn-xs font-semibold px-1"><span role="img" aria-label="Pay">💵</span></button>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -829,6 +1002,165 @@ function Home() {
               </form>
               {paymentError && <div className="message error mt-2">{paymentError}</div>}
               {paymentSuccess && <div className="message success mt-2">{paymentSuccess}</div>}
+            </div>
+          </div>
+        </div>
+      )}
+      {showPaymentsModal && paymentsBooking && (
+        <div className="modal-overlay z-50">
+          <div className="modal max-w-lg">
+            <div className="modal-header flex justify-between items-center">
+              <h3 className="text-xl font-bold">Payments for {paymentsBooking.clientName}</h3>
+              <button onClick={() => setShowPaymentsModal(false)} className="close-btn">&times;</button>
+            </div>
+            <div className="modal-content">
+              {/* Summary */}
+              <div className="mb-4 p-2 bg-gray-50 rounded flex flex-wrap gap-4 text-sm">
+                <div>Total Price: <span className="font-semibold">${paymentsBooking.price}</span></div>
+                <div>Total Paid: <span className="font-semibold">${(displayPayments.reduce((sum, p) => sum + Number(p.amount), 0)).toFixed(2)}</span></div>
+                <div>Balance Due: <span className="font-semibold">${(paymentsBooking.price - displayPayments.reduce((sum, p) => sum + Number(p.amount), 0)).toFixed(2)}</span></div>
+                <div>Status: {displayPayments.reduce((sum, p) => sum + Number(p.amount), 0) >= paymentsBooking.price ? <span className="text-green-600 font-semibold">Paid</span> : <span className="text-red-600 font-semibold">Not Paid</span>}</div>
+              </div>
+              {/* Payment History Table */}
+              <div className="mb-4">
+                <div className="font-semibold mb-2">Payment History</div>
+                {displayPayments.length === 0 ? (
+                  <div className="text-xs text-gray-500">No payments yet.</div>
+                ) : (
+                  <table className="w-full text-xs border">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="p-1 border">Date</th>
+                        <th className="p-1 border">Amount</th>
+                        <th className="p-1 border">Method</th>
+                        <th className="p-1 border">Note</th>
+                        <th className="p-1 border">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {displayPayments.map((p, idx) => (
+                        <tr key={p._id || idx}>
+                          <td className="p-1 border">{p.date ? new Date(p.date).toLocaleDateString() : ''}</td>
+                          <td className="p-1 border">${p.amount}</td>
+                          <td className="p-1 border">{p.method}</td>
+                          <td className="p-1 border">{p.note}</td>
+                          <td className="p-1 border">
+                            {paymentHistory.length > 0 && (
+                              <button className="text-blue-600 mr-1" onClick={() => {
+                                setIsEditingPayment(p._id || idx);
+                                setNewPayment({ date: p.date ? p.date.slice(0,10) : '', amount: p.amount, method: p.method, note: p.note });
+                              }}>Edit</button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+              {/* Add/Edit Payment Form */}
+              <div className="mb-2">
+                <div className="font-semibold mb-1">{isEditingPayment ? 'Edit Payment' : 'Add Payment'}</div>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  setPaymentModalError('');
+                  setPaymentModalSuccess('');
+                  if (!newPayment.date || !newPayment.amount || !newPayment.method) {
+                    setPaymentModalError('Date, amount, and method are required.');
+                    return;
+                  }
+                  try {
+                    if (isEditingPayment) {
+                      // Edit payment
+                      try {
+                        const res = await axios.put('https://backend-ruby-eight-64.vercel.app/api/bookings/payments', {
+                          bookingId: paymentsBooking._id,
+                          paymentId: isEditingPayment,
+                          payment: newPayment
+                        });
+                        const updated = res.data;
+                        setPaymentHistory(updated.payments || []);
+                        setPaymentsBooking(updated);
+                        // After updating payments, update paid status in DB
+                        const totalPaid = (updated.payments || []).reduce((sum, p) => sum + Number(p.amount), 0);
+                        const isPaid = Math.abs(Number(totalPaid) - Number(updated.price)) < 0.01 || Number(totalPaid) > Number(updated.price);
+                        try {
+                          await axios.put('https://backend-ruby-eight-64.vercel.app/api/bookings/paid', {
+                            bookingId: updated._id,
+                            paid: isPaid
+                          });
+                        } catch (err) {
+                          // Optionally log error, but don't block UI
+                          console.error('Failed to update paid status:', err.response?.data?.message || err.message);
+                        }
+                        setPaymentModalSuccess('Payment updated!');
+                        setIsEditingPayment(null);
+                        setNewPayment({ date: '', amount: '', method: '', note: '' });
+                        // Refresh bookings data to update the modal in real-time
+                        try {
+                          const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                            params: { apartmentId: selectedApartment._id }
+                          });
+                          setBookings(res.data);
+                        } catch (err) {
+                          console.error('Failed to refresh bookings:', err);
+                        }
+                      } catch (err) {
+                        setPaymentModalError(err.response?.data?.message || 'Failed to update payment');
+                      }
+                    } else {
+                      // Add payment
+                      try {
+                        const res = await axios.post('https://backend-ruby-eight-64.vercel.app/api/bookings/payments', {
+                          bookingId: paymentsBooking._id,
+                          payment: newPayment
+                        });
+                        const updated = res.data;
+                        setPaymentHistory(updated.payments || []);
+                        setPaymentsBooking(updated);
+                        // After updating payments, update paid status in DB
+                        const totalPaid = (updated.payments || []).reduce((sum, p) => sum + Number(p.amount), 0);
+                        const isPaid = Math.abs(Number(totalPaid) - Number(updated.price)) < 0.01 || Number(totalPaid) > Number(updated.price);
+                        try {
+                          await axios.put('https://backend-ruby-eight-64.vercel.app/api/bookings/paid', {
+                            bookingId: updated._id,
+                            paid: isPaid
+                          });
+                        } catch (err) {
+                          // Optionally log error, but don't block UI
+                          console.error('Failed to update paid status:', err.response?.data?.message || err.message);
+                        }
+                        setPaymentModalSuccess('Payment added!');
+                        setNewPayment({ date: '', amount: '', method: '', note: '' });
+                        // Refresh bookings data to update the modal in real-time
+                        try {
+                          const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                            params: { apartmentId: selectedApartment._id }
+                          });
+                          setBookings(res.data);
+                        } catch (err) {
+                          console.error('Failed to refresh bookings:', err);
+                        }
+                      } catch (err) {
+                        setPaymentModalError(err.response?.data?.message || 'Failed to add payment');
+                      }
+                    }
+                  } catch (err) {
+                    setPaymentModalError(err.message || 'Error saving payment');
+                  }
+                }} className="flex flex-wrap gap-2 items-end">
+                  <input type="date" className="input-field" value={newPayment.date} onChange={e => setNewPayment(f => ({ ...f, date: e.target.value }))} required />
+                  <input type="number" className="input-field" placeholder="Amount" value={newPayment.amount} onChange={e => setNewPayment(f => ({ ...f, amount: e.target.value }))} required min="1" />
+                  <input className="input-field" placeholder="Method" value={newPayment.method} onChange={e => setNewPayment(f => ({ ...f, method: e.target.value }))} required />
+                  <input className="input-field" placeholder="Note" value={newPayment.note} onChange={e => setNewPayment(f => ({ ...f, note: e.target.value }))} />
+                  <button type="submit" className="btn btn-primary btn-xs">{isEditingPayment ? 'Update' : 'Add'}</button>
+                  {isEditingPayment && (
+                    <button type="button" className="btn btn-secondary btn-xs" onClick={() => { setIsEditingPayment(null); setNewPayment({ date: '', amount: '', method: '', note: '' }); }}>Cancel</button>
+                  )}
+                </form>
+                {paymentModalError && <div className="message error mt-1">{paymentModalError}</div>}
+                {paymentModalSuccess && <div className="message success mt-1">{paymentModalSuccess}</div>}
+              </div>
             </div>
           </div>
         </div>
