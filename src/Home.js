@@ -40,7 +40,7 @@ function Home() {
 
   const fetchApartments = async (pageNum = 1, searchTerm = '') => {
     try {
-      const res = await axios.get('http://localhost:5001/api/apartments', {
+      const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/apartments', {
         params: { page: pageNum, limit, search: searchTerm }
       });
       setApartments(res.data.apartments || []);
@@ -57,7 +57,7 @@ function Home() {
 
   useEffect(() => {
     if (selectedApartment && showModal) {
-      axios.get(`http://localhost:5001/api/bookings/${selectedApartment._id}`)
+      axios.get(`https://backend-ruby-eight-64.vercel.app/api/bookings/${selectedApartment._id}`)
         .then(res => setBookings(res.data))
         .catch(() => setBookings([]));
     }
@@ -77,7 +77,7 @@ function Home() {
       return;
     }
     try {
-      await axios.post('http://localhost:5001/api/apartments', { name });
+      await axios.post('https://backend-ruby-eight-64.vercel.app/api/apartments', { name });
       setSuccess('Apartment created!');
       setName('');
       setPage(1);
@@ -200,7 +200,7 @@ function Home() {
                   }
                   try {
                     if (editingBooking) {
-                      await axios.put(`http://localhost:5001/api/bookings/${editingBooking}`, {
+                      await axios.put(`https://backend-ruby-eight-64.vercel.app/api/bookings/${editingBooking}`, {
                         ...bookingForm,
                         apartment: selectedApartment._id,
                         price: Number(bookingForm.price),
@@ -210,7 +210,7 @@ function Home() {
                       setBookingSuccess('Booking updated!');
                       setEditingBooking(null);
                     } else {
-                      await axios.post('http://localhost:5001/api/bookings', {
+                      await axios.post('https://backend-ruby-eight-64.vercel.app/api/bookings', {
                         ...bookingForm,
                         apartment: selectedApartment._id,
                         price: Number(bookingForm.price),
@@ -223,7 +223,7 @@ function Home() {
                       clientName: '', bookingDate: '', checkIn: '', checkOut: '', price: '', paymentMethod: '', paid: false, specialNote: '', guests: ''
                     });
                     // Refresh bookings
-                    const res = await axios.get(`http://localhost:5001/api/bookings/${selectedApartment._id}`);
+                    const res = await axios.get(`https://backend-ruby-eight-64.vercel.app/api/bookings/${selectedApartment._id}`);
                     setBookings(res.data);
                   } catch {
                     setBookingError('Failed to save booking');
