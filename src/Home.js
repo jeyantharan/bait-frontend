@@ -23,6 +23,7 @@ function Home() {
     checkIn: '',
     checkOut: '',
     price: '',
+    advance: '',
     paymentMethod: '',
     paid: false,
     specialNote: '',
@@ -37,6 +38,10 @@ function Home() {
   const [hoveredDate, setHoveredDate] = useState(null);
   const [hoveredBooking, setHoveredBooking] = useState(null);
   const BOOKINGS_PER_PAGE = 3;
+  const [selectedDateBookings, setSelectedDateBookings] = useState([]);
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [showRangeModal, setShowRangeModal] = useState(false);
+  const [showRangeWarning, setShowRangeWarning] = useState(false);
 
   const fetchApartments = async (pageNum = 1, searchTerm = '') => {
     try {
@@ -120,6 +125,8 @@ function Home() {
     printWindow.document.write(`<div><strong>Check Out:</strong> ${booking.checkOut.slice(0,10)}</div>`);
     printWindow.document.write(`<div><strong>Guests:</strong> ${booking.guests}</div>`);
     printWindow.document.write(`<div><strong>Price:</strong> $${booking.price}</div>`);
+    printWindow.document.write(`<div><strong>Advance:</strong> $${booking.advance || 0}</div>`);
+    printWindow.document.write(`<div><strong>Due:</strong> $${booking.price - (booking.advance || 0)}</div>`);
     printWindow.document.write(`<div><strong>Payment Method:</strong> ${booking.paymentMethod}</div>`);
     printWindow.document.write(`<div><strong>Status:</strong> ${booking.paid ? 'Paid' : 'Not Paid'}</div>`);
     printWindow.document.write(`<div><strong>Special Note:</strong> ${booking.specialNote || 'N/A'}</div>`);
@@ -129,6 +136,41 @@ function Home() {
     printWindow.print();
     printWindow.close();
   };
+
+  // Helper to get all dates in a range
+  function getDatesInRange(start, end) {
+    const date = new Date(start);
+    const dates = [];
+    while (date <= end) {
+      dates.push(new Date(date));
+      date.setDate(date.getDate() + 1);
+    }
+    return dates;
+  }
+
+  // Compute booked/free dates in selected range
+  let bookedDatesInRange = [];
+  let freeDatesInRange = [];
+  let bookedDateInfo = {};
+  let hasBookedDates = false;
+  if (bookingForm.checkIn && bookingForm.checkOut) {
+    const checkInDate = new Date(bookingForm.checkIn);
+    const checkOutDate = new Date(bookingForm.checkOut);
+    const allDates = getDatesInRange(checkInDate, checkOutDate);
+    bookings.forEach(b => {
+      const bStart = new Date(b.checkIn);
+      const bEnd = new Date(b.checkOut);
+      let d = new Date(bStart);
+      while (d <= bEnd) {
+        const key = d.toISOString().slice(0,10);
+        bookedDateInfo[key] = b.clientName;
+        d.setDate(d.getDate() + 1);
+      }
+    });
+    bookedDatesInRange = allDates.filter(d => bookedDateInfo[d.toISOString().slice(0,10)]);
+    freeDatesInRange = allDates.filter(d => !bookedDateInfo[d.toISOString().slice(0,10)]);
+    hasBookedDates = bookedDatesInRange.length > 0;
+  }
 
 
   return (
@@ -259,7 +301,7 @@ function Home() {
                     setBookingSuccess('');
 
                     // Basic validation
-                    const requiredFields = ['clientName', 'bookingDate', 'checkIn', 'checkOut', 'price', 'paymentMethod', 'guests'];
+                    const requiredFields = ['clientName', 'bookingDate', 'checkIn', 'checkOut', 'price', 'advance', 'paymentMethod', 'guests'];
                     const missingFields = requiredFields.filter(field => !bookingForm[field]);
 
                     if (missingFields.length > 0) {
@@ -281,6 +323,12 @@ function Home() {
                         return;
                     }
 
+                    if (hasBookedDates) {
+                      setShowRangeModal(true);
+                      setShowRangeWarning(true);
+                      return;
+                    }
+
 
                     try {
                       if (editingBooking) {
@@ -288,6 +336,7 @@ function Home() {
                           ...bookingForm,
                           apartment: selectedApartment._id,
                           price: Number(bookingForm.price),
+                          advance: Number(bookingForm.advance) || 0,
                           paid: Boolean(bookingForm.paid),
                           guests: Number(bookingForm.guests)
                         }, {
@@ -300,13 +349,14 @@ function Home() {
                           ...bookingForm,
                           apartment: selectedApartment._id,
                           price: Number(bookingForm.price),
+                          advance: Number(bookingForm.advance) || 0,
                           paid: Boolean(bookingForm.paid),
                           guests: Number(bookingForm.guests)
                         });
                         setBookingSuccess('Booking created successfully!');
                       }
                       setBookingForm({
-                        clientName: '', bookingDate: '', checkIn: '', checkOut: '', price: '', paymentMethod: '', paid: false, specialNote: '', guests: ''
+                        clientName: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: ''
                       });
                       // Refresh bookings
                       const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
@@ -354,6 +404,52 @@ function Home() {
                       onChange={e => setBookingForm(f => ({ ...f, checkOut: e.target.value }))} 
                     />
                   </div>
+                  {/* Booked/Free Dates Info */}
+                  {bookingForm.checkIn && bookingForm.checkOut && hasBookedDates && (
+                    <div className="my-2">
+                      <button
+                        type="button"
+                        className="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700 transition"
+                        onClick={() => setShowRangeModal(true)}
+                      >
+                        Some dates in your range are already booked! View details
+                      </button>
+                    </div>
+                  )}
+                  {/* Range Modal */}
+                  {showRangeModal && (
+                    <div className="modal-overlay">
+                      <div className="modal max-w-md">
+                        <div className="modal-header flex justify-between items-center">
+                          <h3 className="text-xl font-bold text-red-700">Selected Range Not Fully Available</h3>
+                          <button onClick={() => setShowRangeModal(false)} className="close-btn">&times;</button>
+                        </div>
+                        <div className="modal-content">
+                          <div className="mb-2 text-gray-700">You cannot book this range. Please choose different dates.</div>
+                          {bookedDatesInRange.length > 0 && (
+                            <div className="text-red-600 text-sm mb-2">
+                              <strong>Booked Dates:</strong>
+                              <ul className="list-disc ml-5">
+                                {bookedDatesInRange.map(d => (
+                                  <li key={d.toISOString()}>{d.toISOString().slice(0,10)} <span className="italic">({bookedDateInfo[d.toISOString().slice(0,10)]})</span></li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {freeDatesInRange.length > 0 && (
+                            <div className="text-green-700 text-sm mb-2">
+                              <strong>Free Dates:</strong>
+                              <ul className="list-disc ml-5">
+                                {freeDatesInRange.map(d => (
+                                  <li key={d.toISOString()}>{d.toISOString().slice(0,10)}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div className="form-group vertical">
                     <label className="input-label">Price ($)</label>
                     <input 
@@ -362,6 +458,16 @@ function Home() {
                       value={bookingForm.price} 
                       onChange={e => setBookingForm(f => ({ ...f, price: e.target.value }))} 
                       placeholder="e.g., 250.00"
+                    />
+                  </div>
+                  <div className="form-group vertical">
+                    <label className="input-label">Advance Payment ($)</label>
+                    <input 
+                      type="number" 
+                      className="input-field" 
+                      value={bookingForm.advance} 
+                      onChange={e => setBookingForm(f => ({ ...f, advance: e.target.value }))} 
+                      placeholder="e.g., 50.00 (default 0)"
                     />
                   </div>
                   <div className="form-group vertical">
@@ -405,11 +511,12 @@ function Home() {
                     />
                   </div>
                   <div className="flex gap-2 mt-2">
-                    <button type="submit" className="btn btn-primary flex-1">
+                    <button type="submit" className="btn btn-primary flex-1" disabled={hasBookedDates}>
                       {editingBooking ? 'Update Booking' : 'Add Booking'}
                     </button>
+      
                     {editingBooking && (
-                      <button type="button" className="btn btn-secondary flex-1" onClick={() => { setEditingBooking(null); setBookingForm({ clientName: '', bookingDate: '', checkIn: '', checkOut: '', price: '', paymentMethod: '', paid: false, specialNote: '', guests: '' }); }}>
+                      <button type="button" className="btn btn-secondary flex-1" onClick={() => { setEditingBooking(null); setBookingForm({ clientName: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: '' }); }}>
                         Cancel Edit
                       </button>
                     )}
@@ -425,6 +532,20 @@ function Home() {
                     <Calendar
                       value={calendarDate}
                       onChange={setCalendarDate}
+                      onClickDay={date => {
+                        // Set hours to 0 for comparison
+                        const clicked = new Date(date);
+                        clicked.setHours(0,0,0,0);
+                        const bookingsForDate = bookings.filter(b => {
+                          const checkIn = new Date(b.checkIn);
+                          const checkOut = new Date(b.checkOut);
+                          checkIn.setHours(0,0,0,0);
+                          checkOut.setHours(0,0,0,0);
+                          return clicked >= checkIn && clicked <= checkOut;
+                        });
+                        setSelectedDateBookings(bookingsForDate);
+                        setShowDateModal(true);
+                      }}
                       tileContent={({ date, view }) => {
                         if (view === 'month') {
                           const foundBookings = bookings.filter(b => {
@@ -489,7 +610,7 @@ function Home() {
                               {b.checkIn.slice(0,10)} to {b.checkOut.slice(0,10)} | Guests: {b.guests}
                             </div>
                             <div className="booking-details">
-                              Price: <span className="font-semibold">${b.price}</span> | Status: <span className={b.paid ? 'status-paid' : 'status-unpaid'}>{b.paid ? 'Paid' : 'Not Paid'}</span>
+                              Price: <span className="font-semibold">${b.price}</span> | Advance: <span className="font-semibold">${b.advance || 0}</span> | Due: <span className="font-semibold">${(b.price - (b.advance || 0))}</span> | Status: <span className={b.paid ? 'status-paid' : 'status-unpaid'}>{b.paid ? 'Paid' : 'Not Paid'}</span>
                             </div>
                             <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
                           </div>
@@ -510,6 +631,7 @@ function Home() {
                                   checkIn: b.checkIn ? b.checkIn.slice(0,10) : '',
                                   checkOut: b.checkOut ? b.checkOut.slice(0,10) : '',
                                   price: b.price,
+                                  advance: b.advance || '',
                                   paymentMethod: b.paymentMethod,
                                   paid: b.paid,
                                   specialNote: b.specialNote,
@@ -548,6 +670,40 @@ function Home() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {showDateModal && (
+        <div className="modal-overlay">
+          <div className="modal max-w-md">
+            <div className="modal-header flex justify-between items-center">
+              <h3 className="text-xl font-bold">Bookings for {calendarDate.toLocaleDateString()}</h3>
+              <button onClick={() => setShowDateModal(false)} className="close-btn">&times;</button>
+            </div>
+            <div className="modal-content">
+              {selectedDateBookings.length === 0 ? (
+                <div className="empty-state text-sm py-4">No bookings for this date.</div>
+              ) : (
+                <ul className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                  {selectedDateBookings.map((b, idx) => (
+                    <li key={b._id || idx} className="booking-item">
+                      <div className="booking-name font-semibold">{b.clientName}</div>
+                      <div className="booking-details text-sm">{b.checkIn.slice(0,10)} to {b.checkOut.slice(0,10)} | Guests: {b.guests}</div>
+                      <div className="booking-details text-sm">Price: ${b.price} | Advance: ${b.advance || 0} | Due: ${b.price - (b.advance || 0)}</div>
+                      <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
+                      <div className="booking-details text-xs">Status: <span className={b.paid ? 'status-paid' : 'status-unpaid'}>{b.paid ? 'Paid' : 'Not Paid'}</span></div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {showRangeWarning && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-2 rounded shadow-lg z-50 animate-bounce">
+          Cannot book: some dates are already booked.
+          <button className="ml-4 text-white font-bold" onClick={() => setShowRangeWarning(false)}>&times;</button>
         </div>
       )}
     </div>
