@@ -20,7 +20,7 @@ function Login() {
     }
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5001/api/login', { email, password });
+      const res = await axios.post('https://backend-ruby-eight-64.vercel.app/api/login', { email, password });
       setSuccess('Login successful!');
       localStorage.setItem('token', res.data.token);
       setTimeout(() => {
