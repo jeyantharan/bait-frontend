@@ -60,6 +60,27 @@ function Clients() {
     });
   };
 
+  // Helper to get total paid for a booking
+  function getTotalPaid(booking) {
+    if (booking.payments && booking.payments.length > 0) {
+      return booking.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    }
+    return 0;
+  }
+
+  // Helper to get due for a booking
+  function getDue(booking) {
+    if (booking.paid) return 0;
+    return Number(booking.price) - getTotalPaid(booking);
+  }
+
+  // Helper to check if booking is fully paid
+  function isBookingPaid(booking) {
+    const totalPaid = getTotalPaid(booking);
+    const price = Number(booking.price);
+    return Math.abs(Number(totalPaid) - price) < 0.01 || Number(totalPaid) > price;
+  }
+
   return (
     <div className="min-h-screen w-full flex flex-col items-center bg-white text-black py-8 px-4">
       <div className="bg-black p-8 rounded-xl shadow-2xl w-full max-w-4xl text-center mb-8 border border-gray-800">
@@ -122,7 +143,7 @@ function Clients() {
                           <li className="text-gray-500">No bookings in this date range.</li>
                         ) : filtered.map(b => (
                           <li key={b._id} className="text-gray-700">
-                            <span className="font-medium">{b.checkIn.slice(0,10)}</span> to <span className="font-medium">{b.checkOut.slice(0,10)}</span> | Guests: {b.guests} | Price: <span className="font-medium">${b.price}</span> | Advance: <span className="font-medium">${b.advance || 0}</span> | Due: <span className="font-medium">${b.price - (b.advance || 0)}</span> | {b.paid ? <span className="status-paid">Paid</span> : <span className="status-unpaid">Not Paid</span>}
+                            <span className="font-medium">{b.checkIn.slice(0,10)}</span> to <span className="font-medium">{b.checkOut.slice(0,10)}</span> | Guests: {b.guests} | Price: <span className="font-medium">${b.price}</span> | Paid: <span className="font-medium">${getTotalPaid(b)}</span> | Due: <span className="font-medium">${getDue(b)}</span> | {isBookingPaid(b) ? <span className="status-paid">Paid</span> : <span className="status-unpaid">Not Paid</span>}
                             {b.specialNote && <span className="text-gray-500 text-xs italic"> — {b.specialNote}</span>}
                           </li>
                         ))}
@@ -170,7 +191,7 @@ function Clients() {
                           {b.checkIn.slice(0,10)} to {b.checkOut.slice(0,10)} | Guests: {b.guests}
                         </div>
                         <div className="booking-details">
-                          Price: <span className="font-semibold">${b.price}</span> | Advance: <span className="font-semibold">${b.advance || 0}</span> | Due: <span className="font-semibold">${b.price - (b.advance || 0)}</span> | Status: <span className={b.paid ? 'status-paid' : 'status-unpaid'}>{b.paid ? 'Paid' : 'Not Paid'}</span>
+                          Price: <span className="font-semibold">${b.price}</span> | Paid: <span className="font-semibold">${getTotalPaid(b)}</span> | Due: <span className="font-semibold">${getDue(b)}</span> | Status: <span className={isBookingPaid(b) ? 'status-paid' : 'status-unpaid'}>{isBookingPaid(b) ? 'Paid' : 'Not Paid'}</span>
                         </div>
                         <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
                       </div>
