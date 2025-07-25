@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Calendar from 'react-calendar';
@@ -100,6 +100,27 @@ function Home() {
   const filteredBookings = bookings.filter(b => b.clientName.toLowerCase().includes(bookingSearch.toLowerCase()));
   const totalBookingPages = Math.ceil(filteredBookings.length / BOOKINGS_PER_PAGE);
   const paginatedBookings = filteredBookings.slice((bookingPage - 1) * BOOKINGS_PER_PAGE, bookingPage * BOOKINGS_PER_PAGE);
+
+  const printBooking = (booking) => {
+    const printWindow = window.open('', '', 'width=600,height=600');
+    printWindow.document.write('<html><head><title>Booking Details</title>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(`<h2>Booking Details</h2>`);
+    printWindow.document.write(`<strong>Client Name:</strong> ${booking.clientName}<br/>`);
+    printWindow.document.write(`<strong>Booking Date:</strong> ${booking.bookingDate ? booking.bookingDate.slice(0,10) : ''}<br/>`);
+    printWindow.document.write(`<strong>Check In:</strong> ${booking.checkIn.slice(0,10)}<br/>`);
+    printWindow.document.write(`<strong>Check Out:</strong> ${booking.checkOut.slice(0,10)}<br/>`);
+    printWindow.document.write(`<strong>Guests:</strong> ${booking.guests}<br/>`);
+    printWindow.document.write(`<strong>Price:</strong> $${booking.price}<br/>`);
+    printWindow.document.write(`<strong>Payment Method:</strong> ${booking.paymentMethod}<br/>`);
+    printWindow.document.write(`<strong>Status:</strong> ${booking.paid ? 'Paid' : 'Not Paid'}<br/>`);
+    printWindow.document.write(`<strong>Special Note:</strong> ${booking.specialNote || ''}<br/>`);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
 
   return (
     <div className="w-screen h-screen min-h-screen min-w-screen flex flex-col items-center justify-center bg-gradient-to-br from-green-200 to-blue-200 py-8 overflow-auto">
@@ -316,23 +337,31 @@ function Home() {
                         <div>Price: ${b.price} | {b.paid ? 'Paid' : 'Not Paid'} | Guests: {b.guests}</div>
                         <div className="text-xs text-gray-500">{b.specialNote}</div>
                       </div>
-                      <button
-                        className="mt-1 text-blue-600 hover:underline text-xs"
-                        onClick={() => {
-                          setEditingBooking(b._id);
-                          setBookingForm({
-                            clientName: b.clientName,
-                            bookingDate: b.bookingDate ? b.bookingDate.slice(0,10) : '',
-                            checkIn: b.checkIn ? b.checkIn.slice(0,10) : '',
-                            checkOut: b.checkOut ? b.checkOut.slice(0,10) : '',
-                            price: b.price,
-                            paymentMethod: b.paymentMethod,
-                            paid: b.paid,
-                            specialNote: b.specialNote,
-                            guests: b.guests
-                          });
-                        }}
-                      >Edit</button>
+                      <div className="flex flex-col gap-1 items-end">
+                        <button
+                          className="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition-colors text-xs mb-1"
+                          onClick={() => printBooking(b)}
+                        >
+                          Print
+                        </button>
+                        <button
+                          className="mt-1 text-blue-600 hover:underline text-xs"
+                          onClick={() => {
+                            setEditingBooking(b._id);
+                            setBookingForm({
+                              clientName: b.clientName,
+                              bookingDate: b.bookingDate ? b.bookingDate.slice(0,10) : '',
+                              checkIn: b.checkIn ? b.checkIn.slice(0,10) : '',
+                              checkOut: b.checkOut ? b.checkOut.slice(0,10) : '',
+                              price: b.price,
+                              paymentMethod: b.paymentMethod,
+                              paid: b.paid,
+                              specialNote: b.specialNote,
+                              guests: b.guests
+                            });
+                          }}
+                        >Edit</button>
+                      </div>
                     </li>
                   ))}
                 </ul>
