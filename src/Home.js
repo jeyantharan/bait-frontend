@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
+import 'react-calendar/dist/Calendar.css'; // Keep default calendar styles for base, then override
 
 function Home() {
   const navigate = useNavigate();
@@ -104,17 +104,25 @@ function Home() {
   const printBooking = (booking) => {
     const printWindow = window.open('', '', 'width=600,height=600');
     printWindow.document.write('<html><head><title>Booking Details</title>');
+    printWindow.document.write('<style>');
+    printWindow.document.write(`
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; }
+      h2 { color: #000000; margin-bottom: 15px; }
+      strong { color: #000000; }
+      div { margin-bottom: 5px; }
+    `);
+    printWindow.document.write('</style>');
     printWindow.document.write('</head><body>');
     printWindow.document.write(`<h2>Booking Details</h2>`);
-    printWindow.document.write(`<strong>Client Name:</strong> ${booking.clientName}<br/>`);
-    printWindow.document.write(`<strong>Booking Date:</strong> ${booking.bookingDate ? booking.bookingDate.slice(0,10) : ''}<br/>`);
-    printWindow.document.write(`<strong>Check In:</strong> ${booking.checkIn.slice(0,10)}<br/>`);
-    printWindow.document.write(`<strong>Check Out:</strong> ${booking.checkOut.slice(0,10)}<br/>`);
-    printWindow.document.write(`<strong>Guests:</strong> ${booking.guests}<br/>`);
-    printWindow.document.write(`<strong>Price:</strong> $${booking.price}<br/>`);
-    printWindow.document.write(`<strong>Payment Method:</strong> ${booking.paymentMethod}<br/>`);
-    printWindow.document.write(`<strong>Status:</strong> ${booking.paid ? 'Paid' : 'Not Paid'}<br/>`);
-    printWindow.document.write(`<strong>Special Note:</strong> ${booking.specialNote || ''}<br/>`);
+    printWindow.document.write(`<div><strong>Client Name:</strong> ${booking.clientName}</div>`);
+    printWindow.document.write(`<div><strong>Booking Date:</strong> ${booking.bookingDate ? booking.bookingDate.slice(0,10) : ''}</div>`);
+    printWindow.document.write(`<div><strong>Check In:</strong> ${booking.checkIn.slice(0,10)}</div>`);
+    printWindow.document.write(`<div><strong>Check Out:</strong> ${booking.checkOut.slice(0,10)}</div>`);
+    printWindow.document.write(`<div><strong>Guests:</strong> ${booking.guests}</div>`);
+    printWindow.document.write(`<div><strong>Price:</strong> $${booking.price}</div>`);
+    printWindow.document.write(`<div><strong>Payment Method:</strong> ${booking.paymentMethod}</div>`);
+    printWindow.document.write(`<div><strong>Status:</strong> ${booking.paid ? 'Paid' : 'Not Paid'}</div>`);
+    printWindow.document.write(`<div><strong>Special Note:</strong> ${booking.specialNote || 'N/A'}</div>`);
     printWindow.document.write('</body></html>');
     printWindow.document.close();
     printWindow.focus();
@@ -122,264 +130,369 @@ function Home() {
     printWindow.close();
   };
 
+
   return (
-    <div className="w-screen h-screen min-h-screen min-w-screen flex flex-col items-center justify-center bg-gradient-to-br from-green-200 to-blue-200 py-8 overflow-auto">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-center mb-10 border border-green-300">
-        <h1 className="text-4xl font-extrabold mb-2 text-green-700">🏢 Apartment Manager</h1>
-        <p className="text-lg mb-6 text-gray-600">Welcome Home! You are logged in.</p>
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 text-white px-6 py-2 rounded-full hover:bg-red-600 transition-colors mb-6 shadow"
-        >
-          Logout
-        </button>
-        <form onSubmit={handleCreate} className="mt-4 flex flex-col items-center gap-2">
-          <input
-            type="text"
-            placeholder="Apartment Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="border-2 border-green-300 px-4 py-2 rounded-full w-full focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
-          <button type="submit" className="bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600 transition-colors w-full shadow">Create Apartment</button>
-        </form>
-        {error && <div className="text-red-500 mt-2 text-sm font-semibold">{error}</div>}
-        {success && <div className="text-green-600 mt-2 text-sm font-semibold">{success}</div>}
-      </div>
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-lg border border-blue-200">
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-2">
-          <h2 className="text-2xl font-bold text-blue-700 flex items-center gap-2">Apartment List <span className="text-base text-gray-400">({total})</span></h2>
-          <input
-            type="text"
-            placeholder="Search apartments..."
-            value={search}
-            onChange={handleSearch}
-            className="border px-3 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-60"
-          />
-        </div>
-        {apartments.length === 0 ? (
-          <p className="text-gray-500">No apartments found.</p>
-        ) : (
-          <ul className="space-y-4">
-            {apartments.map((apt) => (
-              <li key={apt._id} className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3 shadow-sm border border-gray-200">
-                <span className="font-medium text-gray-800 text-lg">{apt.name}</span>
-                <button
-                  className="bg-green-500 text-white px-4 py-1 rounded-full hover:bg-green-600 transition-colors text-sm font-semibold shadow"
-                  onClick={() => { setSelectedApartment(apt); setShowModal(true); }}
-                >
-                  View
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-6">
+    <div className="min-h-screen bg-white text-black py-8">
+      <div className="container px-4">
+        {/* Header */}
+        <div className="bg-black text-white p-8 rounded-xl mb-8 shadow-lg">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+              <h1 className="text-4xl font-extrabold mb-2">🏢 Apartment Manager</h1>
+              <p className="text-gray-400 text-lg">Welcome Home! You are logged in.</p>
+            </div>
             <button
-              onClick={() => setPage(page - 1)}
-              disabled={page === 1}
-              className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+              onClick={handleLogout}
+              className="bg-yellow-400 text-black px-6 py-2 rounded-lg font-semibold hover:bg-yellow-500 transition-all duration-300 transform hover:-translate-y-px shadow-md"
             >
-              Prev
-            </button>
-            <span className="font-semibold">Page {page} of {totalPages}</span>
-            <button
-              onClick={() => setPage(page + 1)}
-              disabled={page === totalPages}
-              className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-            >
-              Next
+              Logout
             </button>
           </div>
-        )}
-      </div>
-      {showModal && selectedApartment && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl relative overflow-y-auto max-h-screen">
-            <button onClick={() => setShowModal(false)} className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-2xl font-bold text-green-700">{selectedApartment.name}</h3>
+          <form onSubmit={handleCreate} className="mt-6 flex flex-col sm:flex-row items-center gap-4">
+            <input
+              type="text"
+              placeholder="New Apartment Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="flex-1 w-full sm:w-auto border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 text-black bg-white"
+            />
+            <button type="submit" className="bg-black text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-all duration-300 transform hover:-translate-y-px shadow-md w-full sm:w-auto">
+              Create Apartment
+            </button>
+          </form>
+          {error && <div className="message error mt-4">{error}</div>}
+          {success && <div className="message success mt-4">{success}</div>}
+        </div>
+
+        {/* Apartment List Section */}
+        <div className="card">
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+            <h2 className="text-2xl font-bold text-black flex items-center gap-2">Apartment List <span className="text-base text-gray-500">({total})</span></h2>
+            <input
+              type="text"
+              placeholder="Search apartments..."
+              value={search}
+              onChange={handleSearch}
+              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-72 text-black bg-white"
+            />
+          </div>
+          {apartments.length === 0 ? (
+            <div className="empty-state">
+              <h3>No apartments found.</h3>
+              <p>Start by creating a new apartment above!</p>
+            </div>
+          ) : (
+            <ul className="space-y-4">
+              {apartments.map((apt) => (
+                <li key={apt._id} className="apartment-item">
+                  <span className="font-semibold text-xl text-black">{apt.name}</span>
+                  <button
+                    className="btn btn-yellow btn-sm"
+                    onClick={() => { setSelectedApartment(apt); setShowModal(true); }}
+                  >
+                    View Details
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {totalPages > 1 && (
+            <div className="pagination">
               <button
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors text-sm ml-4"
-                onClick={() => {
-                  setShowModal(false);
-                  navigate('/clients');
-                }}
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+                className="btn btn-secondary btn-sm"
               >
-                View Client History
+                Previous
+              </button>
+              <span className="font-semibold text-black">Page {page} of {totalPages}</span>
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages}
+                className="btn btn-secondary btn-sm"
+              >
+                Next
               </button>
             </div>
-            <div className="flex flex-col md:flex-row gap-8">
-              <form
-                className="flex-1 flex flex-col gap-2"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setBookingError('');
-                  setBookingSuccess('');
-                  if (!bookingForm.clientName || !bookingForm.bookingDate || !bookingForm.checkIn || !bookingForm.checkOut || !bookingForm.price || !bookingForm.paymentMethod || !bookingForm.guests) {
-                    setBookingError('All fields except special note are required.');
-                    return;
-                  }
-                  try {
-                    if (editingBooking) {
-                      await axios.put('https://backend-ruby-eight-64.vercel.app/api/bookings', {
-                        ...bookingForm,
-                        apartment: selectedApartment._id,
-                        price: Number(bookingForm.price),
-                        paid: Boolean(bookingForm.paid),
-                        guests: Number(bookingForm.guests)
-                      }, {
-                        params: { id: editingBooking }
-                      });
-                      setBookingSuccess('Booking updated!');
-                      setEditingBooking(null);
-                    } else {
-                      await axios.post('https://backend-ruby-eight-64.vercel.app/api/bookings', {
-                        ...bookingForm,
-                        apartment: selectedApartment._id,
-                        price: Number(bookingForm.price),
-                        paid: Boolean(bookingForm.paid),
-                        guests: Number(bookingForm.guests)
-                      });
-                      setBookingSuccess('Booking created!');
+          )}
+        </div>
+      </div>
+
+      {/* Booking Modal */}
+      {showModal && selectedApartment && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <div>
+                <h3 className="text-3xl font-bold">{selectedApartment.name}</h3>
+                <p className="text-gray-400">Manage bookings for this apartment</p>
+              </div>
+              <div className="modal-actions flex-col sm:flex-row items-center gap-2"> {/* Added flex-col for small screens */}
+                <button
+                  className="btn btn-yellow"
+                  onClick={() => {
+                    setShowModal(false);
+                    navigate('/clients');
+                  }}
+                >
+                  View Client History
+                </button>
+                <button onClick={() => setShowModal(false)} className="close-btn">
+                  &times;
+                </button>
+              </div>
+            </div>
+            <div className="modal-content">
+              {/* Added flex-col for small screens, and larger gap on medium+ screens */}
+              <div className="flex flex-col md:flex-row gap-6"> 
+                {/* Booking Form */}
+                <form
+                  className="flex flex-col gap-4 w-full md:w-1/2" // Added width classes
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setBookingError('');
+                    setBookingSuccess('');
+
+                    // Basic validation
+                    const requiredFields = ['clientName', 'bookingDate', 'checkIn', 'checkOut', 'price', 'paymentMethod', 'guests'];
+                    const missingFields = requiredFields.filter(field => !bookingForm[field]);
+
+                    if (missingFields.length > 0) {
+                        setBookingError(`Please fill all required fields: ${missingFields.join(', ')}.`);
+                        return;
                     }
-                    setBookingForm({
-                      clientName: '', bookingDate: '', checkIn: '', checkOut: '', price: '', paymentMethod: '', paid: false, specialNote: '', guests: ''
-                    });
-                    // Refresh bookings
-                    const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
-                      params: { apartmentId: selectedApartment._id }
-                    });
-                    setBookings(res.data);
-                  } catch {
-                    setBookingError('Failed to save booking');
-                  }
-                }}
-              >
-                <label className="font-semibold">Client Name</label>
-                <input className="border px-3 py-2 rounded" value={bookingForm.clientName} onChange={e => setBookingForm(f => ({ ...f, clientName: e.target.value }))} />
-                <label className="font-semibold">Booking Date</label>
-                <input type="date" className="border px-3 py-2 rounded" value={bookingForm.bookingDate} onChange={e => setBookingForm(f => ({ ...f, bookingDate: e.target.value }))} />
-                <label className="font-semibold">Check In</label>
-                <input type="date" className="border px-3 py-2 rounded" value={bookingForm.checkIn} onChange={e => setBookingForm(f => ({ ...f, checkIn: e.target.value }))} />
-                <label className="font-semibold">Check Out</label>
-                <input type="date" className="border px-3 py-2 rounded" value={bookingForm.checkOut} onChange={e => setBookingForm(f => ({ ...f, checkOut: e.target.value }))} />
-                <label className="font-semibold">Price</label>
-                <input type="number" className="border px-3 py-2 rounded" value={bookingForm.price} onChange={e => setBookingForm(f => ({ ...f, price: e.target.value }))} />
-                <label className="font-semibold">Payment Method</label>
-                <input className="border px-3 py-2 rounded" value={bookingForm.paymentMethod} onChange={e => setBookingForm(f => ({ ...f, paymentMethod: e.target.value }))} />
-                <label className="font-semibold">Paid</label>
-                <select className="border px-3 py-2 rounded" value={bookingForm.paid} onChange={e => setBookingForm(f => ({ ...f, paid: e.target.value === 'true' }))}>
-                  <option value={false}>Not Paid</option>
-                  <option value={true}>Paid</option>
-                </select>
-                <label className="font-semibold">Number of Guests</label>
-                <input type="number" min="1" className="border px-3 py-2 rounded" value={bookingForm.guests} onChange={e => setBookingForm(f => ({ ...f, guests: e.target.value }))} />
-                <label className="font-semibold">Special Note</label>
-                <textarea className="border px-3 py-2 rounded" value={bookingForm.specialNote} onChange={e => setBookingForm(f => ({ ...f, specialNote: e.target.value }))} />
-                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded mt-2">{editingBooking ? 'Update Booking' : 'Add Booking'}</button>
-                {editingBooking && (
-                  <button type="button" className="bg-gray-300 text-gray-800 px-4 py-2 rounded mt-2 ml-2" onClick={() => { setEditingBooking(null); setBookingForm({ clientName: '', bookingDate: '', checkIn: '', checkOut: '', price: '', paymentMethod: '', paid: false, specialNote: '', guests: '' }); }}>Cancel Edit</button>
-                )}
-                {bookingError && <div className="text-red-500 text-sm mt-1">{bookingError}</div>}
-                {bookingSuccess && <div className="text-green-600 text-sm mt-1">{bookingSuccess}</div>}
-              </form>
-              <div className="flex-1">
-                <label className="font-semibold block mb-2">Bookings Calendar</label>
-                <Calendar
-                  value={calendarDate}
-                  onChange={setCalendarDate}
-                  tileContent={({ date, view }) => {
-                    if (view === 'month') {
-                      const found = bookings.find(b => {
-                        const checkIn = new Date(b.checkIn);
-                        const checkOut = new Date(b.checkOut);
-                        return date >= checkIn && date <= checkOut;
+
+                    // Date validation
+                    const checkInDate = new Date(bookingForm.checkIn);
+                    const checkOutDate = new Date(bookingForm.checkOut);
+                    const bookingReqDate = new Date(bookingForm.bookingDate);
+
+                    if (checkInDate > checkOutDate) {
+                        setBookingError('Check-in date cannot be after check-out date.');
+                        return;
+                    }
+                     if (bookingReqDate > checkInDate) {
+                        setBookingError('Booking date cannot be after check-in date.');
+                        return;
+                    }
+
+
+                    try {
+                      if (editingBooking) {
+                        await axios.put('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                          ...bookingForm,
+                          apartment: selectedApartment._id,
+                          price: Number(bookingForm.price),
+                          paid: Boolean(bookingForm.paid),
+                          guests: Number(bookingForm.guests)
+                        }, {
+                          params: { id: editingBooking }
+                        });
+                        setBookingSuccess('Booking updated successfully!');
+                        setEditingBooking(null);
+                      } else {
+                        await axios.post('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                          ...bookingForm,
+                          apartment: selectedApartment._id,
+                          price: Number(bookingForm.price),
+                          paid: Boolean(bookingForm.paid),
+                          guests: Number(bookingForm.guests)
+                        });
+                        setBookingSuccess('Booking created successfully!');
+                      }
+                      setBookingForm({
+                        clientName: '', bookingDate: '', checkIn: '', checkOut: '', price: '', paymentMethod: '', paid: false, specialNote: '', guests: ''
                       });
-                      return found ? (
-                        <div
-                          className="flex justify-center mt-1 relative"
-                          onMouseEnter={() => { setHoveredDate(date); setHoveredBooking(found); }}
-                          onMouseLeave={() => { setHoveredDate(null); setHoveredBooking(null); }}
-                        >
-                          <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-                          {hoveredDate && hoveredBooking && date.toDateString() === new Date(hoveredDate).toDateString() && (
-                            <div className="absolute z-50 left-1/2 -translate-x-1/2 top-6 bg-white border border-gray-300 rounded shadow-lg p-2 text-xs min-w-[180px]">
-                              <div><span className="font-semibold">{hoveredBooking.clientName}</span></div>
-                              <div>Check-in: {hoveredBooking.checkIn.slice(0,10)}</div>
-                              <div>Check-out: {hoveredBooking.checkOut.slice(0,10)}</div>
-                              <div>Guests: {hoveredBooking.guests}</div>
-                              <div>Price: ${hoveredBooking.price}</div>
-                              <div>{hoveredBooking.paid ? 'Paid' : 'Not Paid'}</div>
-                              <div className="text-gray-500">{hoveredBooking.specialNote}</div>
-                            </div>
-                          )}
-                        </div>
-                      ) : null;
+                      // Refresh bookings
+                      const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                        params: { apartmentId: selectedApartment._id }
+                      });
+                      setBookings(res.data);
+                    } catch (err) {
+                        setBookingError(err.response?.data?.message || 'Failed to save booking. Please try again.');
                     }
                   }}
-                />
-                <div className="flex items-center gap-2 mt-4 mb-2">
-                  <input
-                    type="text"
-                    placeholder="Search by client name..."
-                    value={bookingSearch}
-                    onChange={e => { setBookingSearch(e.target.value); setBookingPage(1); }}
-                    className="border px-2 py-1 rounded text-sm"
-                  />
-                </div>
-                <ul className="mt-2 max-h-40 overflow-y-auto">
-                  {paginatedBookings.map(b => (
-                    <li key={b._id} className="mb-2 p-2 border rounded text-sm bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div>
-                        <div><span className="font-semibold">{b.clientName}</span> ({b.checkIn.slice(0,10)} to {b.checkOut.slice(0,10)})</div>
-                        <div>Price: ${b.price} | {b.paid ? 'Paid' : 'Not Paid'} | Guests: {b.guests}</div>
-                        <div className="text-xs text-gray-500">{b.specialNote}</div>
-                      </div>
-                      <div className="flex flex-col gap-1 items-end">
-                        <button
-                          className="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition-colors text-xs mb-1"
-                          onClick={() => printBooking(b)}
-                        >
-                          Print
-                        </button>
-                        <button
-                          className="mt-1 text-blue-600 hover:underline text-xs"
-                          onClick={() => {
-                            setEditingBooking(b._id);
-                            setBookingForm({
-                              clientName: b.clientName,
-                              bookingDate: b.bookingDate ? b.bookingDate.slice(0,10) : '',
-                              checkIn: b.checkIn ? b.checkIn.slice(0,10) : '',
-                              checkOut: b.checkOut ? b.checkOut.slice(0,10) : '',
-                              price: b.price,
-                              paymentMethod: b.paymentMethod,
-                              paid: b.paid,
-                              specialNote: b.specialNote,
-                              guests: b.guests
-                            });
-                          }}
-                        >Edit</button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                {totalBookingPages > 1 && (
-                  <div className="flex justify-center items-center gap-2 mt-2">
-                    <button
-                      onClick={() => setBookingPage(bookingPage - 1)}
-                      disabled={bookingPage === 1}
-                      className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 text-xs"
-                    >Prev</button>
-                    <span className="font-semibold text-xs">Page {bookingPage} of {totalBookingPages}</span>
-                    <button
-                      onClick={() => setBookingPage(bookingPage + 1)}
-                      disabled={bookingPage === totalBookingPages}
-                      className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 text-xs"
-                    >Next</button>
+                >
+                  <div className="form-group vertical">
+                    <label>Client Name</label>
+                    <input className="form-control" value={bookingForm.clientName} onChange={e => setBookingForm(f => ({ ...f, clientName: e.target.value }))} />
                   </div>
-                )}
+                  <div className="form-group vertical">
+                    <label>Booking Date</label>
+                    <input type="date" className="form-control" value={bookingForm.bookingDate} onChange={e => setBookingForm(f => ({ ...f, bookingDate: e.target.value }))} />
+                  </div>
+                  <div className="form-group vertical">
+                    <label>Check In</label>
+                    <input type="date" className="form-control" value={bookingForm.checkIn} onChange={e => setBookingForm(f => ({ ...f, checkIn: e.target.value }))} />
+                  </div>
+                  <div className="form-group vertical">
+                    <label>Check Out</label>
+                    <input type="date" className="form-control" value={bookingForm.checkOut} onChange={e => setBookingForm(f => ({ ...f, checkOut: e.target.value }))} />
+                  </div>
+                  <div className="form-group vertical">
+                    <label>Price</label>
+                    <input type="number" className="form-control" value={bookingForm.price} onChange={e => setBookingForm(f => ({ ...f, price: e.target.value }))} />
+                  </div>
+                  <div className="form-group vertical">
+                    <label>Payment Method</label>
+                    <input className="form-control" value={bookingForm.paymentMethod} onChange={e => setBookingForm(f => ({ ...f, paymentMethod: e.target.value }))} />
+                  </div>
+                  <div className="form-group vertical">
+                    <label>Paid Status</label>
+                    <select className="form-control" value={bookingForm.paid} onChange={e => setBookingForm(f => ({ ...f, paid: e.target.value === 'true' }))}>
+                      <option value={false}>Not Paid</option>
+                      <option value={true}>Paid</option>
+                    </select>
+                  </div>
+                  <div className="form-group vertical">
+                    <label>Number of Guests</label>
+                    <input type="number" min="1" className="form-control" value={bookingForm.guests} onChange={e => setBookingForm(f => ({ ...f, guests: e.target.value }))} />
+                  </div>
+                  <div className="form-group vertical">
+                    <label>Special Note</label>
+                    <textarea className="form-control" value={bookingForm.specialNote} onChange={e => setBookingForm(f => ({ ...f, specialNote: e.target.value }))} />
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <button type="submit" className="btn btn-primary flex-1">
+                      {editingBooking ? 'Update Booking' : 'Add Booking'}
+                    </button>
+                    {editingBooking && (
+                      <button type="button" className="btn btn-secondary flex-1" onClick={() => { setEditingBooking(null); setBookingForm({ clientName: '', bookingDate: '', checkIn: '', checkOut: '', price: '', paymentMethod: '', paid: false, specialNote: '', guests: '' }); }}>
+                        Cancel Edit
+                      </button>
+                    )}
+                  </div>
+                  {bookingError && <div className="message error mt-2">{bookingError}</div>}
+                  {bookingSuccess && <div className="message success mt-2">{bookingSuccess}</div>}
+                </form>
+
+                {/* Booking Calendar and List */}
+                <div className="w-full md:w-1/2"> {/* Added width class */}
+                  <label className="font-semibold block mb-2 text-black">Bookings Calendar</label>
+                  <div className="calendar-container">
+                    <Calendar
+                      value={calendarDate}
+                      onChange={setCalendarDate}
+                      tileContent={({ date, view }) => {
+                        if (view === 'month') {
+                          const foundBookings = bookings.filter(b => {
+                            const checkIn = new Date(b.checkIn);
+                            const checkOut = new Date(b.checkOut);
+                            // Set hours to 0 to compare dates only
+                            checkIn.setHours(0,0,0,0);
+                            checkOut.setHours(0,0,0,0);
+                            date.setHours(0,0,0,0);
+                            return date >= checkIn && date <= checkOut;
+                          });
+                          return foundBookings.length > 0 ? (
+                            <div
+                              className="flex justify-center mt-1 relative"
+                              onMouseEnter={() => { setHoveredDate(date); setHoveredBooking(foundBookings); }}
+                              onMouseLeave={() => { setHoveredDate(null); setHoveredBooking(null); }}
+                            >
+                              <span className="inline-block w-2 h-2 rounded-full bg-yellow-400"></span>
+                              {hoveredDate && date.toDateString() === hoveredDate.toDateString() && hoveredBooking && (
+                                <div className="absolute z-50 left-1/2 -translate-x-1/2 top-6 bg-white border border-gray-300 rounded shadow-lg p-2 text-xs min-w-[200px] max-h-40 overflow-y-auto text-black">
+                                  {hoveredBooking.map((hb, index) => (
+                                    <div key={index} className="mb-1 pb-1 border-b last:border-b-0 border-gray-200">
+                                      <div><span className="font-semibold">{hb.clientName}</span></div>
+                                      <div>Check-in: {hb.checkIn.slice(0,10)}</div>
+                                      <div>Check-out: {hb.checkOut.slice(0,10)}</div>
+                                      <div>Guests: {hb.guests}</div>
+                                      <div>Price: ${hb.price}</div>
+                                      <div>{hb.paid ? <span className="text-green-600 font-medium">Paid</span> : <span className="text-red-600 font-medium">Not Paid</span>}</div>
+                                      <div className="text-gray-500 text-xs">{hb.specialNote || 'No special note.'}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : null;
+                        }
+                      }}
+                      className="react-calendar-custom" // Custom class for styling
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-4 mb-2">
+                    <input
+                      type="text"
+                      placeholder="Search bookings by client..."
+                      value={bookingSearch}
+                      onChange={e => { setBookingSearch(e.target.value); setBookingPage(1); }}
+                      className="border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 flex-1 text-black bg-white"
+                    />
+                  </div>
+                  {paginatedBookings.length === 0 ? (
+                    <div className="empty-state text-sm py-4">
+                      <p>No bookings found for this search.</p>
+                    </div>
+                  ) : (
+                    <ul className="mt-2 max-h-60 overflow-y-auto space-y-3 pr-2">
+                      {paginatedBookings.map(b => (
+                        <li key={b._id} className="booking-item flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div className="booking-info">
+                            <div className="booking-name">{b.clientName}</div>
+                            <div className="booking-details">
+                              {b.checkIn.slice(0,10)} to {b.checkOut.slice(0,10)} | Guests: {b.guests}
+                            </div>
+                            <div className="booking-details">
+                              Price: <span className="font-semibold">${b.price}</span> | Status: <span className={b.paid ? 'status-paid' : 'status-unpaid'}>{b.paid ? 'Paid' : 'Not Paid'}</span>
+                            </div>
+                            <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
+                          </div>
+                          <div className="booking-actions">
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => printBooking(b)}
+                            >
+                              Print
+                            </button>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => {
+                                setEditingBooking(b._id);
+                                setBookingForm({
+                                  clientName: b.clientName,
+                                  bookingDate: b.bookingDate ? b.bookingDate.slice(0,10) : '',
+                                  checkIn: b.checkIn ? b.checkIn.slice(0,10) : '',
+                                  checkOut: b.checkOut ? b.checkOut.slice(0,10) : '',
+                                  price: b.price,
+                                  paymentMethod: b.paymentMethod,
+                                  paid: b.paid,
+                                  specialNote: b.specialNote,
+                                  guests: b.guests
+                                });
+                              }}
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {totalBookingPages > 1 && (
+                    <div className="pagination mt-4">
+                      <button
+                        onClick={() => setBookingPage(bookingPage - 1)}
+                        disabled={bookingPage === 1}
+                        className="btn btn-secondary btn-sm"
+                      >
+                        Prev
+                      </button>
+                      <span className="font-semibold text-xs text-black">Page {bookingPage} of {totalBookingPages}</span>
+                      <button
+                        onClick={() => setBookingPage(bookingPage + 1)}
+                        disabled={bookingPage === totalBookingPages}
+                        className="btn btn-secondary btn-sm"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
