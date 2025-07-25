@@ -42,6 +42,11 @@ function Home() {
   const [showDateModal, setShowDateModal] = useState(false);
   const [showRangeModal, setShowRangeModal] = useState(false);
   const [showRangeWarning, setShowRangeWarning] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentBooking, setPaymentBooking] = useState(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentError, setPaymentError] = useState('');
+  const [paymentSuccess, setPaymentSuccess] = useState('');
 
   const fetchApartments = async (pageNum = 1, searchTerm = '') => {
     try {
@@ -427,13 +432,38 @@ function Home() {
                         <div className="modal-content">
                           <div className="mb-2 text-gray-700">You cannot book this range. Please choose different dates.</div>
                           {bookedDatesInRange.length > 0 && (
-                            <div className="text-red-600 text-sm mb-2">
-                              <strong>Booked Dates:</strong>
-                              <ul className="list-disc ml-5">
-                                {bookedDatesInRange.map(d => (
-                                  <li key={d.toISOString()}>{d.toISOString().slice(0,10)} <span className="italic">({bookedDateInfo[d.toISOString().slice(0,10)]})</span></li>
-                                ))}
-                              </ul>
+                            <div className="mb-4">
+                              <div className="text-red-700 font-bold text-base mb-2 flex items-center gap-2">
+                                <svg className="inline w-5 h-5 text-red-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636l-1.414-1.414A9 9 0 105.636 18.364l1.414 1.414A9 9 0 1018.364 5.636z" /></svg>
+                                Booked Dates & Details
+                              </div>
+                              <div className="space-y-3">
+                                {bookedDatesInRange.map(d => {
+                                  const dateStr = d.toISOString().slice(0,10);
+                                  // Find the booking for this date
+                                  const booking = bookings.find(b => {
+                                    const bStart = new Date(b.checkIn);
+                                    const bEnd = new Date(b.checkOut);
+                                    bStart.setHours(0,0,0,0);
+                                    bEnd.setHours(0,0,0,0);
+                                    return d >= bStart && d <= bEnd;
+                                  });
+                                  return (
+                                    <div key={dateStr} className="rounded-lg border border-red-200 bg-red-50 p-3 shadow-sm flex flex-col sm:flex-row sm:items-center gap-2">
+                                      <div className="font-semibold text-red-700 flex-shrink-0 w-28">{dateStr}</div>
+                                      <div className="flex-1">
+                                        <div className="font-bold text-black">{booking?.clientName || bookedDateInfo[dateStr]}</div>
+                                        <div className="text-xs text-gray-700">Check-in: {booking?.checkIn?.slice(0,10)} | Check-out: {booking?.checkOut?.slice(0,10)}</div>
+                                        <div className="text-xs text-gray-700">Guests: {booking?.guests} | Price: ${booking?.price} | Advance: ${booking?.advance || 0} | Due: ${booking ? booking.price - (booking.advance || 0) : ''}</div>
+                                        <div className="text-xs mt-1">
+                                          Status: <span className={booking?.paid ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>{booking?.paid ? 'Paid' : 'Not Paid'}</span>
+                                        </div>
+                                        {booking?.specialNote && <div className="text-xs text-gray-500 italic mt-1">Note: {booking.specialNote}</div>}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                           {freeDatesInRange.length > 0 && (
@@ -614,7 +644,7 @@ function Home() {
                             </div>
                             <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
                           </div>
-                          <div className="booking-actions">
+                          <div className="booking-actions flex flex-col gap-1">
                             <button
                               className="btn btn-secondary btn-sm"
                               onClick={() => printBooking(b)}
@@ -641,6 +671,20 @@ function Home() {
                             >
                               Edit
                             </button>
+                            {!b.paid && (
+                              <button
+                                className="btn btn-yellow btn-sm font-semibold"
+                                onClick={() => {
+                                  setPaymentBooking(b);
+                                  setPaymentAmount('');
+                                  setPaymentError('');
+                                  setPaymentSuccess('');
+                                  setShowPaymentModal(true);
+                                }}
+                              >
+                                Record Payment
+                              </button>
+                            )}
                           </div>
                         </li>
                       ))}
@@ -704,6 +748,73 @@ function Home() {
         <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-2 rounded shadow-lg z-50 animate-bounce">
           Cannot book: some dates are already booked.
           <button className="ml-4 text-white font-bold" onClick={() => setShowRangeWarning(false)}>&times;</button>
+        </div>
+      )}
+      {showPaymentModal && paymentBooking && (
+        <div className="modal-overlay">
+          <div className="modal max-w-md">
+            <div className="modal-header flex justify-between items-center">
+              <h3 className="text-xl font-bold">Record Payment</h3>
+              <button onClick={() => setShowPaymentModal(false)} className="close-btn">&times;</button>
+            </div>
+            <div className="modal-content">
+              <div className="mb-2 text-gray-700">Booking for <span className="font-semibold">{paymentBooking.clientName}</span> ({paymentBooking.checkIn.slice(0,10)} to {paymentBooking.checkOut.slice(0,10)})</div>
+              <div className="mb-2 text-sm">Total Price: <span className="font-semibold">${paymentBooking.price}</span></div>
+              <div className="mb-2 text-sm">Already Paid: <span className="font-semibold">${paymentBooking.advance || 0}</span></div>
+              <div className="mb-2 text-sm">Due: <span className="font-semibold">${paymentBooking.price - (paymentBooking.advance || 0)}</span></div>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setPaymentError('');
+                setPaymentSuccess('');
+                const pay = Number(paymentAmount);
+                if (!pay || pay <= 0) {
+                  setPaymentError('Enter a valid payment amount.');
+                  return;
+                }
+                const newAdvance = (Number(paymentBooking.advance) || 0) + pay;
+                if (newAdvance > paymentBooking.price) {
+                  setPaymentError('Total paid cannot exceed total price.');
+                  return;
+                }
+                try {
+                  await axios.put('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                    ...paymentBooking,
+                    advance: newAdvance,
+                    paid: newAdvance >= paymentBooking.price,
+                  }, {
+                    params: { id: paymentBooking._id }
+                  });
+                  setPaymentSuccess('Payment recorded successfully!');
+                  setTimeout(() => {
+                    setShowPaymentModal(false);
+                    setPaymentBooking(null);
+                    setPaymentAmount('');
+                    setPaymentError('');
+                    setPaymentSuccess('');
+                    // Refresh bookings
+                    axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                      params: { apartmentId: selectedApartment._id }
+                    }).then(res => setBookings(res.data));
+                  }, 1200);
+                } catch (err) {
+                  setPaymentError('Failed to record payment.');
+                }
+              }}>
+                <input
+                  type="number"
+                  className="input-field mb-2"
+                  placeholder="Enter payment amount"
+                  value={paymentAmount}
+                  onChange={e => setPaymentAmount(e.target.value)}
+                  min="1"
+                  max={paymentBooking.price - (paymentBooking.advance || 0)}
+                />
+                <button type="submit" className="btn btn-primary w-full">Submit Payment</button>
+              </form>
+              {paymentError && <div className="message error mt-2">{paymentError}</div>}
+              {paymentSuccess && <div className="message success mt-2">{paymentSuccess}</div>}
+            </div>
+          </div>
         </div>
       )}
     </div>
