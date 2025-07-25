@@ -57,7 +57,9 @@ function Home() {
 
   useEffect(() => {
     if (selectedApartment && showModal) {
-      axios.get(`https://backend-ruby-eight-64.vercel.app/api/bookings/${selectedApartment._id}`)
+      axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+        params: { apartmentId: selectedApartment._id }
+      })
         .then(res => setBookings(res.data))
         .catch(() => setBookings([]));
     }
@@ -200,12 +202,14 @@ function Home() {
                   }
                   try {
                     if (editingBooking) {
-                      await axios.put(`https://backend-ruby-eight-64.vercel.app/api/bookings/${editingBooking}`, {
+                      await axios.put('https://backend-ruby-eight-64.vercel.app/api/bookings', {
                         ...bookingForm,
                         apartment: selectedApartment._id,
                         price: Number(bookingForm.price),
                         paid: Boolean(bookingForm.paid),
                         guests: Number(bookingForm.guests)
+                      }, {
+                        params: { id: editingBooking }
                       });
                       setBookingSuccess('Booking updated!');
                       setEditingBooking(null);
@@ -223,7 +227,9 @@ function Home() {
                       clientName: '', bookingDate: '', checkIn: '', checkOut: '', price: '', paymentMethod: '', paid: false, specialNote: '', guests: ''
                     });
                     // Refresh bookings
-                    const res = await axios.get(`https://backend-ruby-eight-64.vercel.app/api/bookings/${selectedApartment._id}`);
+                    const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                      params: { apartmentId: selectedApartment._id }
+                    });
                     setBookings(res.data);
                   } catch {
                     setBookingError('Failed to save booking');
