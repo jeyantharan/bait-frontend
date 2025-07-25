@@ -412,55 +412,55 @@ function Home() {
                         setBookingSuccess('Booking created successfully!');
                       }
 
-                      // Handle payment portal for advance payments and paid bookings
+                      // Handle payment portal when booking is created/updated
                       if (savedBooking) {
-                        const totalAmount = Number(bookingForm.price);
+                        const totalPrice = Number(bookingForm.price);
                         const advanceAmount = Number(bookingForm.advance) || 0;
-                        const isPaid = Boolean(bookingForm.paid);
                         
-                        // Create payment records for the booking
-                        try {
-                          // If there's an advance payment, create a payment record for it
-                          if (advanceAmount > 0) {
+                        // If advance payment is provided, create a payment record for it
+                        if (advanceAmount > 0) {
+                          try {
                             const advancePaymentData = {
-                              bookingId: savedBooking._id,
-                              payment: {
-                                date: bookingForm.paymentDate || new Date().toISOString().slice(0, 10),
-                                amount: advanceAmount.toString(),
-                                method: bookingForm.paymentMethod || 'Advance Payment',
-                                note: 'Advance payment during booking creation/update'
-                              }
+                              date: bookingForm.paymentDate || new Date().toISOString().slice(0, 10),
+                              amount: advanceAmount,
+                              method: bookingForm.paymentMethod || 'Advance Payment',
+                              note: 'Advance payment for booking'
                             };
                             
-                            await axios.post('https://backend-ruby-eight-64.vercel.app/api/bookings/payments', advancePaymentData);
+                            await axios.post('https://backend-ruby-eight-64.vercel.app/api/bookings/payments', {
+                              bookingId: savedBooking._id,
+                              payment: advancePaymentData
+                            });
+                          } catch (paymentErr) {
+                            console.error('Failed to create advance payment record:', paymentErr);
                           }
-                          
-                          // If booking is marked as paid and there's a remaining amount, create a payment record for it
-                          if (isPaid) {
-                            const remainingAmount = totalAmount - advanceAmount;
-                            if (remainingAmount > 0) {
-                              const remainingPaymentData = {
-                                bookingId: savedBooking._id,
-                                payment: {
-                                  date: bookingForm.paymentDate || new Date().toISOString().slice(0, 10),
-                                  amount: remainingAmount.toString(),
-                                  method: bookingForm.paymentMethod || 'Full Payment',
-                                  note: 'Paid booking'
-                                }
-                              };
-                              
-                              await axios.post('https://backend-ruby-eight-64.vercel.app/api/bookings/payments', remainingPaymentData);
-                            }
+                        }
+                        
+                        // If booking is marked as paid and there's remaining amount, create additional payment record
+                        if (Boolean(bookingForm.paid) && advanceAmount < totalPrice) {
+                          const remainingAmount = totalPrice - advanceAmount;
+                          try {
+                            const remainingPaymentData = {
+                              date: bookingForm.paymentDate || new Date().toISOString().slice(0, 10),
+                              amount: remainingAmount,
+                              method: bookingForm.paymentMethod || 'Remaining Payment',
+                              note: 'Remaining payment for booking'
+                            };
+                            
+                            await axios.post('https://backend-ruby-eight-64.vercel.app/api/bookings/payments', {
+                              bookingId: savedBooking._id,
+                              payment: remainingPaymentData
+                            });
+                          } catch (paymentErr) {
+                            console.error('Failed to create remaining payment record:', paymentErr);
                           }
-                        } catch (paymentErr) {
-                          console.error('Failed to create payment record:', paymentErr);
-                          // Don't fail the booking creation/update if payment record fails
                         }
                       }
+
                       setBookingForm({
                         clientName: '', phone: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: '', paymentDate: ''
                       });
-                      // Refresh bookings
+                      // Final refresh to get updated booking data with payment records
                       const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
                         params: { apartmentId: selectedApartment._id }
                       });
