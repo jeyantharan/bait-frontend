@@ -30,7 +30,7 @@ function Login() {
       if (err.response && err.response.data && err.response.data.message) {
         setError(err.response.data.message);
       } else {
-        setError('Network error');
+        setError('Network error. Please check your connection.');
       }
     } finally {
       setLoading(false);
@@ -38,45 +38,64 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md w-full max-w-sm">
-        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-        {error && <div className="mb-4 text-red-500 text-sm">{error}</div>}
-        {success && <div className="mb-4 text-green-600 text-sm">{success}</div>}
-        <div className="mb-4">
-          <label className="block mb-1 text-gray-700" htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
+    <div className="min-h-screen flex items-center justify-center bg-white text-black py-8 px-4">
+      <div className="bg-black p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-800">
+        <h2 className="text-3xl font-extrabold mb-8 text-center text-white">🔑 Welcome Back!</h2>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border border-red-200" role="alert">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm border border-green-200" role="alert">
+              {success}
+            </div>
+          )}
+          
+          <div>
+            <label className="block text-white text-sm font-semibold mb-2" htmlFor="email">
+              Email Address
+            </label>
+            <input
+              id="email"
+              type="email"
+              className="w-full px-4 py-2 border border-gray-700 rounded-lg bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+              placeholder="your.email@example.com"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-white text-sm font-semibold mb-2" htmlFor="password">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              className="w-full px-4 py-2 border border-gray-700 rounded-lg bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+              placeholder="••••••••"
+            />
+          </div>
+          
+          <button
+            type="submit"
+            className="w-full bg-yellow-400 text-black py-3 rounded-lg font-bold text-lg hover:bg-yellow-500 transition-all duration-300 transform hover:-translate-y-px shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
-          />
-        </div>
-        <div className="mb-6">
-          <label className="block mb-1 text-gray-700" htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors disabled:opacity-50"
-          disabled={loading}
-        >
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
+          >
+            {loading ? 'Authenticating...' : 'Login'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
 
-export default Login; 
+export default Login;
