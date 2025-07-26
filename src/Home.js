@@ -4,7 +4,7 @@ import axios from 'axios';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css'; // Keep default calendar styles for base, then override
 
-function Home() {
+function Home({ setIsAuthenticated }) {
   const navigate = useNavigate();
   const [apartments, setApartments] = useState([]);
   const [total, setTotal] = useState(0);
@@ -55,6 +55,28 @@ function Home() {
   const [paymentModalError, setPaymentModalError] = useState('');
   const [paymentModalSuccess, setPaymentModalSuccess] = useState('');
   const [isEditingPayment, setIsEditingPayment] = useState(null);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [changePasswordForm, setChangePasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
+  const [changePasswordError, setChangePasswordError] = useState('');
+  const [changePasswordSuccess, setChangePasswordSuccess] = useState('');
+  const [showEditApartmentModal, setShowEditApartmentModal] = useState(false);
+  const [editingApartment, setEditingApartment] = useState(null);
+  const [editApartmentName, setEditApartmentName] = useState('');
+  const [editApartmentError, setEditApartmentError] = useState('');
+  const [editApartmentSuccess, setEditApartmentSuccess] = useState('');
+  const [showDeleteBookingModal, setShowDeleteBookingModal] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState(null);
+  const [deleteBookingError, setDeleteBookingError] = useState('');
+  const [deleteBookingSuccess, setDeleteBookingSuccess] = useState('');
 
   const fetchApartments = async (pageNum = 1, searchTerm = '') => {
     try {
@@ -85,6 +107,8 @@ function Home() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('userEmail');
+    setIsAuthenticated(false);
     navigate('/login');
   };
 
@@ -115,7 +139,9 @@ function Home() {
   const totalPages = Math.ceil(total / limit);
 
   // Filter and paginate bookings
-  const filteredBookings = bookings.filter(b => b.clientName.toLowerCase().includes(bookingSearch.toLowerCase()));
+  const filteredBookings = bookings
+    .filter(b => b.clientName.toLowerCase().includes(bookingSearch.toLowerCase()))
+    .sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn)); // Sort by check-in date
   const totalBookingPages = Math.ceil(filteredBookings.length / BOOKINGS_PER_PAGE);
   const paginatedBookings = filteredBookings.slice((bookingPage - 1) * BOOKINGS_PER_PAGE, bookingPage * BOOKINGS_PER_PAGE);
 
@@ -232,12 +258,20 @@ function Home() {
               <h1 className="text-4xl font-extrabold mb-2">🏢 Apartment Manager</h1>
               <p className="text-gray-400 text-lg">Welcome Home! You are logged in.</p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="bg-yellow-400 text-black px-6 py-2 rounded-lg font-semibold hover:bg-yellow-500 transition-all duration-300 transform hover:-translate-y-px shadow-md"
-            >
-              Logout
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowChangePasswordModal(true)}
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-600 transition-all duration-300 transform hover:-translate-y-px shadow-md"
+              >
+                Change Password
+              </button>
+              <button
+                onClick={handleLogout}
+                className="bg-yellow-400 text-black px-6 py-2 rounded-lg font-semibold hover:bg-yellow-500 transition-all duration-300 transform hover:-translate-y-px shadow-md"
+              >
+                Logout
+              </button>
+            </div>
           </div>
           <form onSubmit={handleCreate} className="mt-6 flex flex-col sm:flex-row items-center gap-4">
             <input
@@ -285,12 +319,26 @@ function Home() {
               {apartments.map((apt) => (
                 <li key={apt._id} className="apartment-item">
                   <span className="font-semibold text-xl text-black">{apt.name}</span>
-                  <button
-                    className="btn btn-yellow btn-sm"
-                    onClick={() => { setSelectedApartment(apt); setShowModal(true); }}
-                  >
-                    View Details
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      className="btn btn-yellow btn-sm"
+                      onClick={() => { setSelectedApartment(apt); setShowModal(true); }}
+                    >
+                      View Details
+                    </button>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setEditingApartment(apt);
+                        setEditApartmentName(apt.name);
+                        setShowEditApartmentModal(true);
+                        setEditApartmentError('');
+                        setEditApartmentSuccess('');
+                      }}
+                    >
+                      Edit
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -662,7 +710,7 @@ function Home() {
                               onMouseEnter={() => { setHoveredDate(date); setHoveredBooking(foundBookings); }}
                               onMouseLeave={() => { setHoveredDate(null); setHoveredBooking(null); }}
                             >
-                              <span className="inline-block w-2 h-2 rounded-full bg-yellow-400"></span>
+                              <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
                               {hoveredDate && date.toDateString() === hoveredDate.toDateString() && hoveredBooking && (
                                 <div className="absolute z-50 left-1/2 -translate-x-1/2 top-6 bg-white border border-gray-300 rounded shadow-lg p-2 text-xs min-w-[200px] max-h-40 overflow-y-auto text-black">
                                   {hoveredBooking.map((hb, index) => (
@@ -681,6 +729,15 @@ function Home() {
                             </div>
                           ) : null;
                         }
+                      }}
+                      tileClassName={({ date, view }) => {
+                        if (view === 'month') {
+                          // Check if it's Saturday (day 6)
+                          if (date.getDay() === 6) {
+                            return 'saturday-red';
+                          }
+                        }
+                        return '';
                       }}
                       className="react-calendar-custom" // Custom class for styling
                     />
@@ -782,6 +839,20 @@ function Home() {
                               style={{ width: 28, height: 28 }}
                             >
                               <span role="img" aria-label="Pay">💵</span>
+                            </button>
+                            <button
+                              className="bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow transition flex items-center justify-center text-xs"
+                              title="Delete Booking"
+                              onClick={() => {
+                                setBookingToDelete(b);
+                                setShowDeleteBookingModal(true);
+                                setDeleteBookingError('');
+                                setDeleteBookingSuccess('');
+                              }}
+                              aria-label="Delete"
+                              style={{ width: 28, height: 28 }}
+                            >
+                              <span role="img" aria-label="Delete">🗑️</span>
                             </button>
                           </div>
                         </li>
@@ -908,6 +979,13 @@ function Home() {
                             console.error('Failed to refresh bookings:', err);
                           });
                         }} className="btn btn-yellow btn-xs font-semibold px-1"><span role="img" aria-label="Pay">💵</span></button>
+                        <button title="Delete Booking" onClick={() => {
+                          setBookingToDelete(b);
+                          setShowDeleteBookingModal(true);
+                          setDeleteBookingError('');
+                          setDeleteBookingSuccess('');
+                          setShowDateModal(false);
+                        }} className="btn btn-secondary btn-xs px-1"><span role="img" aria-label="Delete">🗑️</span></button>
                       </div>
                     </li>
                   ))}
@@ -1145,6 +1223,316 @@ function Home() {
                 {paymentModalError && <div className="message error mt-1">{paymentModalError}</div>}
                 {paymentModalSuccess && <div className="message success mt-1">{paymentModalSuccess}</div>}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <div className="modal-overlay">
+          <div className="modal max-w-md">
+            <div className="modal-header">
+              <h3 className="text-xl font-bold">Change Password</h3>
+              <button onClick={() => setShowChangePasswordModal(false)} className="close-btn">
+                &times;
+              </button>
+            </div>
+            <div className="modal-content">
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setChangePasswordError('');
+                setChangePasswordSuccess('');
+
+                // Validation
+                if (!changePasswordForm.currentPassword || !changePasswordForm.newPassword || !changePasswordForm.confirmPassword) {
+                  setChangePasswordError('All fields are required');
+                  return;
+                }
+
+                if (changePasswordForm.newPassword.length < 6) {
+                  setChangePasswordError('New password must be at least 6 characters long');
+                  return;
+                }
+
+                if (changePasswordForm.newPassword !== changePasswordForm.confirmPassword) {
+                  setChangePasswordError('New passwords do not match');
+                  return;
+                }
+
+                try {
+                  // Get user email from localStorage or you might need to store it during login
+                  const userEmail = localStorage.getItem('userEmail') || 'admin@bait.com'; // Default fallback
+                  
+                  await axios.post('https://backend-ruby-eight-64.vercel.app/api/changePassword', {
+                    currentPassword: changePasswordForm.currentPassword,
+                    newPassword: changePasswordForm.newPassword,
+                    email: userEmail
+                  });
+
+                  setChangePasswordSuccess('Password changed successfully!');
+                  setChangePasswordForm({
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: ''
+                  });
+                  setShowPasswords({
+                    current: false,
+                    new: false,
+                    confirm: false
+                  });
+                  
+                  // Close modal after 2 seconds
+                  setTimeout(() => {
+                    setShowChangePasswordModal(false);
+                    setChangePasswordSuccess('');
+                  }, 2000);
+                } catch (err) {
+                  setChangePasswordError(err.response?.data?.message || 'Failed to change password');
+                }
+              }}>
+                <div className="form-group vertical">
+                  <label className="input-label">Current Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPasswords.current ? "text" : "password"}
+                      className="input-field pr-10"
+                      value={changePasswordForm.currentPassword}
+                      onChange={e => setChangePasswordForm(f => ({ ...f, currentPassword: e.target.value }))}
+                      placeholder="Enter current password"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 text-lg"
+                      onClick={() => setShowPasswords(s => ({ ...s, current: !s.current }))}
+                    >
+                      {showPasswords.current ? "🙈" : "👁️"}
+                    </button>
+                  </div>
+                </div>
+                <div className="form-group vertical">
+                  <label className="input-label">New Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPasswords.new ? "text" : "password"}
+                      className="input-field pr-10"
+                      value={changePasswordForm.newPassword}
+                      onChange={e => setChangePasswordForm(f => ({ ...f, newPassword: e.target.value }))}
+                      placeholder="Enter new password (min 6 characters)"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 text-lg"
+                      onClick={() => setShowPasswords(s => ({ ...s, new: !s.new }))}
+                    >
+                      {showPasswords.new ? "🙈" : "👁️"}
+                    </button>
+                  </div>
+                </div>
+                <div className="form-group vertical">
+                  <label className="input-label">Confirm New Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPasswords.confirm ? "text" : "password"}
+                      className="input-field pr-10"
+                      value={changePasswordForm.confirmPassword}
+                      onChange={e => setChangePasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                      placeholder="Confirm new password"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 text-lg"
+                      onClick={() => setShowPasswords(s => ({ ...s, confirm: !s.confirm }))}
+                    >
+                      {showPasswords.confirm ? "🙈" : "👁️"}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button type="submit" className="btn btn-primary flex-1">
+                    Change Password
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary flex-1"
+                    onClick={() => {
+                      setShowChangePasswordModal(false);
+                      setChangePasswordForm({
+                        currentPassword: '',
+                        newPassword: '',
+                        confirmPassword: ''
+                      });
+                      setShowPasswords({
+                        current: false,
+                        new: false,
+                        confirm: false
+                      });
+                      setChangePasswordError('');
+                      setChangePasswordSuccess('');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {changePasswordError && <div className="message error mt-2">{changePasswordError}</div>}
+                {changePasswordSuccess && <div className="message success mt-2">{changePasswordSuccess}</div>}
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Apartment Modal */}
+      {showEditApartmentModal && editingApartment && (
+        <div className="modal-overlay">
+          <div className="modal max-w-md">
+            <div className="modal-header">
+              <h3 className="text-xl font-bold">Edit Apartment</h3>
+              <button onClick={() => setShowEditApartmentModal(false)} className="close-btn">
+                &times;
+              </button>
+            </div>
+            <div className="modal-content">
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setEditApartmentError('');
+                setEditApartmentSuccess('');
+
+                if (!editApartmentName.trim()) {
+                  setEditApartmentError('Apartment name is required');
+                  return;
+                }
+
+                try {
+                  await axios.put(`https://backend-ruby-eight-64.vercel.app/api/apartments`, {
+                    name: editApartmentName.trim()
+                  }, {
+                    params: { id: editingApartment._id }
+                  });
+
+                  setEditApartmentSuccess('Apartment updated successfully!');
+                  
+                  // Refresh apartments list
+                  fetchApartments(page, search);
+                  
+                  // Close modal after 2 seconds
+                  setTimeout(() => {
+                    setShowEditApartmentModal(false);
+                    setEditingApartment(null);
+                    setEditApartmentName('');
+                    setEditApartmentError('');
+                    setEditApartmentSuccess('');
+                  }, 2000);
+                } catch (err) {
+                  setEditApartmentError(err.response?.data?.message || 'Failed to update apartment');
+                }
+              }}>
+                <div className="form-group vertical">
+                  <label className="input-label">Apartment Name</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={editApartmentName}
+                    onChange={e => setEditApartmentName(e.target.value)}
+                    placeholder="Enter apartment name"
+                    required
+                  />
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button type="submit" className="btn btn-primary flex-1">
+                    Update Apartment
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary flex-1"
+                    onClick={() => {
+                      setShowEditApartmentModal(false);
+                      setEditingApartment(null);
+                      setEditApartmentName('');
+                      setEditApartmentError('');
+                      setEditApartmentSuccess('');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {editApartmentError && <div className="message error mt-2">{editApartmentError}</div>}
+                {editApartmentSuccess && <div className="message success mt-2">{editApartmentSuccess}</div>}
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Booking Modal */}
+      {showDeleteBookingModal && bookingToDelete && (
+        <div className="modal-overlay">
+          <div className="modal max-w-md">
+            <div className="modal-header">
+              <h3 className="text-xl font-bold text-red-600">Delete Booking</h3>
+              <button onClick={() => setShowDeleteBookingModal(false)} className="close-btn">
+                &times;
+              </button>
+            </div>
+            <div className="modal-content">
+              <div className="mb-4">
+                <p className="text-gray-700 mb-2">Are you sure you want to delete this booking?</p>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="font-semibold text-black">{bookingToDelete.clientName}</div>
+                  <div className="text-sm text-gray-600">
+                    Check-in: {bookingToDelete.checkIn.slice(0,10)} | Check-out: {bookingToDelete.checkOut.slice(0,10)}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Guests: {bookingToDelete.guests} | Price: ${bookingToDelete.price}
+                  </div>
+                </div>
+                <p className="text-red-600 text-sm mt-2 font-semibold">This action cannot be undone!</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className="btn btn-primary flex-1 bg-red-600 hover:bg-red-700"
+                  onClick={async () => {
+                    try {
+                      await axios.delete(`https://backend-ruby-eight-64.vercel.app/api/bookings`, {
+                        params: { id: bookingToDelete._id }
+                      });
+                      
+                      setDeleteBookingSuccess('Booking deleted successfully!');
+                      
+                      // Refresh bookings
+                      const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                        params: { apartmentId: selectedApartment._id }
+                      });
+                      setBookings(res.data);
+                      
+                      // Close modal after 2 seconds
+                      setTimeout(() => {
+                        setShowDeleteBookingModal(false);
+                        setBookingToDelete(null);
+                        setDeleteBookingError('');
+                        setDeleteBookingSuccess('');
+                      }, 2000);
+                    } catch (err) {
+                      setDeleteBookingError(err.response?.data?.message || 'Failed to delete booking');
+                    }
+                  }}
+                >
+                  Delete Booking
+                </button>
+                <button
+                  className="btn btn-secondary flex-1"
+                  onClick={() => {
+                    setShowDeleteBookingModal(false);
+                    setBookingToDelete(null);
+                    setDeleteBookingError('');
+                    setDeleteBookingSuccess('');
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+              {deleteBookingError && <div className="message error mt-2">{deleteBookingError}</div>}
+              {deleteBookingSuccess && <div className="message success mt-2">{deleteBookingSuccess}</div>}
             </div>
           </div>
         </div>
