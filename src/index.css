@@ -521,3 +521,66 @@ textarea {
     background-color: #fef3c7 !important;
     color: #000 !important;
 }
+
+/* Saturday styling - make all Saturdays red */
+/* Target the 6th column (Saturday) in the calendar grid */
+.react-calendar-custom .react-calendar__month-view__days__day:nth-child(7n+6) {
+    color: #dc2626 !important; /* Red color for Saturdays */
+    font-weight: 600 !important;
+}
+
+.react-calendar-custom .react-calendar__month-view__days__day:nth-child(7n+6):hover {
+    background-color: #fef2f2 !important; /* Light red background on hover */
+}
+
+/* Alternative: Target by day of week using CSS nth-child */
+.react-calendar-custom .react-calendar__tile:nth-child(7n+6) {
+    color: #dc2626 !important;
+    font-weight: 600 !important;
+}
+
+.react-calendar-custom .react-calendar__tile:nth-child(7n+6):hover {
+    background-color: #fef2f2 !important;
+}
+
+/* Direct targeting of Saturday elements */
+.react-calendar-custom .react-calendar__month-view__days__day:nth-child(7n+6) abbr,
+.react-calendar-custom .react-calendar__tile:nth-child(7n+6) abbr {
+    color: #dc2626 !important;
+    font-weight: 600 !important;
+}
+
+/* More comprehensive Saturday targeting */
+.react-calendar-custom .react-calendar__month-view__days__day:nth-child(7n+6),
+.react-calendar-custom .react-calendar__tile:nth-child(7n+6),
+.react-calendar-custom .react-calendar__month-view__days__day:nth-child(7n+6) *,
+.react-calendar-custom .react-calendar__tile:nth-child(7n+6) * {
+    color: #dc2626 !important;
+    font-weight: 600 !important;
+}
+
+/* Force red color for all Saturday elements */
+.react-calendar-custom [class*="react-calendar__tile"]:nth-child(7n+6) {
+    color: #dc2626 !important;
+    font-weight: 600 !important;
+}
+
+.react-calendar-custom [class*="react-calendar__tile"]:nth-child(7n+6) * {
+    color: #dc2626 !important;
+    font-weight: 600 !important;
+}
+
+/* Saturday red class for tileClassName */
+.saturday-red {
+    color: #dc2626 !important; /* Red color for Saturdays */
+    font-weight: 600 !important;
+}
+
+.saturday-red:hover {
+    background-color: #fef2f2 !important; /* Light red background on hover */
+}
+
+.saturday-red abbr {
+    color: #dc2626 !important;
+    font-weight: 600 !important;
+}
