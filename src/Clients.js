@@ -10,6 +10,8 @@ function Clients() {
   const navigate = useNavigate();
   const query = useQuery();
   const initialSearch = query.get('search') || '';
+  const apartmentId = query.get('apartmentId') || '';
+  const apartmentName = query.get('apartmentName') || '';
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState(initialSearch);
   const [loading, setLoading] = useState(false);
@@ -22,7 +24,10 @@ function Clients() {
     setLoading(true);
     try {
       const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/clients', {
-        params: { search: searchTerm }
+        params: { 
+          search: searchTerm,
+          apartmentId: apartmentId 
+        }
       });
       setGroups(res.data);
     } catch {
@@ -34,7 +39,7 @@ function Clients() {
   useEffect(() => {
     fetchGroups(search);
     // eslint-disable-next-line
-  }, [search]);
+  }, [search, apartmentId]);
 
   useEffect(() => {
     setSearch(initialSearch);
@@ -81,9 +86,34 @@ function Clients() {
     return Math.abs(Number(totalPaid) - price) < 0.01 || Number(totalPaid) > price;
   }
 
+  // Group clients by apartment
+  const groupByApartment = () => {
+    const apartmentGroups = {};
+    
+    groups.forEach(group => {
+      const apartmentName = group._id.apartment;
+      const clientName = group._id.clientName;
+      
+      if (!apartmentGroups[apartmentName]) {
+        apartmentGroups[apartmentName] = [];
+      }
+      
+      apartmentGroups[apartmentName].push({
+        clientName,
+        totalBookings: group.totalBookings,
+        lastBooking: group.lastBooking,
+        bookings: group.bookings
+      });
+    });
+    
+    return apartmentGroups;
+  };
+
+  const apartmentGroups = groupByApartment();
+
   return (
     <div className="min-h-screen w-full flex flex-col items-center bg-white text-black py-8 px-4">
-      <div className="bg-black p-8 rounded-xl shadow-2xl w-full max-w-4xl text-center mb-8 border border-gray-800">
+      <div className="bg-black p-8 rounded-xl shadow-2xl w-full max-w-6xl text-center mb-8 border border-gray-800">
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
           <button
             className="btn btn-yellow btn-sm"
@@ -91,7 +121,9 @@ function Clients() {
           >
             Back to Home
           </button>
-          <h1 className="text-3xl font-extrabold text-white flex-1 min-w-max text-center sm:text-left">👥 Client History</h1>
+          <h1 className="text-3xl font-extrabold text-white flex-1 min-w-max text-center sm:text-left">
+            👥 Client History - {apartmentName}
+          </h1>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
@@ -117,49 +149,71 @@ function Clients() {
         </div>
       </div> {/* End of header/search card */}
 
-      <div className="card w-full max-w-4xl">
+      <div className="w-full max-w-6xl">
         {loading ? (
           <div className="text-gray-500 text-center py-8">Loading client data...</div>
-        ) : groups.length === 0 ? (
+        ) : Object.keys(apartmentGroups).length === 0 ? (
           <div className="empty-state">
-            <h3>No client history found.</h3>
+            <h3>No client history found for {apartmentName}.</h3>
             <p>Clients and their bookings will appear here.</p>
           </div>
         ) : (
-          <ul className="space-y-6">
-            {groups.map(group => {
-              const filtered = filterBookingsByDate(group.bookings);
-              return (
-                <li key={group._id.apartment + group._id.clientName} className="apartment-item flex-col sm:flex-row items-start sm:items-center">
-                  <div className="flex-1 w-full text-left">
-                    <span className="font-bold text-xl text-black block mb-1">{group._id.clientName}</span>
-                    <div className="text-sm text-gray-600 mb-2">
-                        Apartment: <span className="font-medium text-black">{group._id.apartment}</span> | Total Bookings: <span className="font-medium text-black">{group.totalBookings}</span> | Last Booking: <span className="font-medium text-black">{group.lastBooking ? group.lastBooking.slice(0,10) : '-'}</span>
-                    </div>
-                    <div className="mt-2">
-                      <span className="font-semibold text-black">Bookings in selected range:</span>
-                      <ul className="ml-4 mt-1 list-disc text-sm space-y-1">
-                        {filtered.length === 0 ? (
-                          <li className="text-gray-500">No bookings in this date range.</li>
-                        ) : filtered.map(b => (
-                          <li key={b._id} className="text-gray-700">
-                            <span className="font-medium">{b.checkIn.slice(0,10)}</span> to <span className="font-medium">{b.checkOut.slice(0,10)}</span> | Guests: {b.guests} | Price: <span className="font-medium">${b.price}</span> | Paid: <span className="font-medium">${getTotalPaid(b)}</span> | Due: <span className="font-medium">${getDue(b)}</span> | {isBookingPaid(b) ? <span className="status-paid">Paid</span> : <span className="status-unpaid">Not Paid</span>}
-                            {b.specialNote && <span className="text-gray-500 text-xs italic"> — {b.specialNote}</span>}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  <button
-                    className="btn btn-yellow btn-sm mt-4 sm:mt-0 sm:ml-4 flex-shrink-0"
-                    onClick={() => { setSelectedClient(group); setShowModal(true); }}
-                  >
-                    View All Bookings
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="space-y-8">
+            {Object.entries(apartmentGroups).map(([apartmentName, clients]) => (
+              <div key={apartmentName} className="card">
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold text-black border-b-2 border-yellow-400 pb-2">
+                    🏢 {apartmentName}
+                  </h2>
+                  <p className="text-gray-600 text-sm mt-1">
+                    Total Clients: {clients.length} | Total Bookings: {clients.reduce((sum, client) => sum + client.totalBookings, 0)}
+                  </p>
+                </div>
+                
+                <ul className="space-y-4">
+                  {clients.map(client => {
+                    const filtered = filterBookingsByDate(client.bookings);
+                    return (
+                      <li key={apartmentName + client.clientName} className="apartment-item flex-col sm:flex-row items-start sm:items-center bg-gray-50 rounded-lg p-4">
+                        <div className="flex-1 w-full text-left">
+                          <span className="font-bold text-xl text-black block mb-1">{client.clientName}</span>
+                          <div className="text-sm text-gray-600 mb-2">
+                              Total Bookings: <span className="font-medium text-black">{client.totalBookings}</span> | Last Booking: <span className="font-medium text-black">{client.lastBooking ? client.lastBooking.slice(0,10) : '-'}</span>
+                          </div>
+                          <div className="mt-2">
+                            <span className="font-semibold text-black">Bookings in selected range:</span>
+                            <ul className="ml-4 mt-1 list-disc text-sm space-y-1">
+                              {filtered.length === 0 ? (
+                                <li className="text-gray-500">No bookings in this date range.</li>
+                              ) : filtered.map(b => (
+                                <li key={b._id} className="text-gray-700">
+                                  <span className="font-medium">{b.checkIn.slice(0,10)}</span> to <span className="font-medium">{b.checkOut.slice(0,10)}</span> | Guests: {b.guests} | Price: <span className="font-medium">${b.price}</span> | Paid: <span className="font-medium">${getTotalPaid(b)}</span> | Due: <span className="font-medium">${getDue(b)}</span> | {isBookingPaid(b) ? <span className="status-paid">Paid</span> : <span className="status-unpaid">Not Paid</span>}
+                                  {b.specialNote && <span className="text-gray-500 text-xs italic"> — {b.specialNote}</span>}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                        <button
+                          className="btn btn-yellow btn-sm mt-4 sm:mt-0 sm:ml-4 flex-shrink-0"
+                          onClick={() => { 
+                            setSelectedClient({
+                              _id: { clientName: client.clientName, apartment: apartmentName },
+                              totalBookings: client.totalBookings,
+                              bookings: client.bookings
+                            }); 
+                            setShowModal(true); 
+                          }}
+                        >
+                          View All Bookings
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
