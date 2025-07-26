@@ -259,13 +259,21 @@ function Home() {
         <div className="card">
           <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
             <h2 className="text-2xl font-bold text-black flex items-center gap-2">Apartment List <span className="text-base text-gray-500">({total})</span></h2>
-            <input
-              type="text"
-              placeholder="Search apartments..."
-              value={search}
-              onChange={handleSearch}
-              className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-72 text-black bg-white"
-            />
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => navigate('/clients')}
+              >
+                View All Client History
+              </button>
+              <input
+                type="text"
+                placeholder="Search apartments..."
+                value={search}
+                onChange={handleSearch}
+                className="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-72 text-black bg-white"
+              />
+            </div>
           </div>
           {apartments.length === 0 ? (
             <div className="empty-state">
@@ -321,17 +329,8 @@ function Home() {
                 <p className="text-gray-400 text-sm">Manage bookings for this apartment</p>
               </div>
 
-              {/* Action Buttons (Client History & Close) */}
+              {/* Action Buttons (Close) */}
               <div className="flex flex-col sm:flex-row items-center gap-2 mt-2 sm:mt-0"> {/* Adjusted margin-top */}
-                <button
-                  className="btn btn-yellow w-full sm:w-auto" // Full width on mobile, auto on sm+
-                  onClick={() => {
-                    setShowModal(false);
-                    navigate('/clients');
-                  }}
-                >
-                  View Client History
-                </button>
                 <button onClick={() => setShowModal(false)} className="close-btn">
                   &times;
                 </button>
