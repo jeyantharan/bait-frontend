@@ -14,32 +14,37 @@ function Clients() {
   const apartmentName = query.get('apartmentName') || '';
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState(initialSearch);
+  const [phoneSearch, setPhoneSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const fetchGroups = async (searchTerm = '') => {
+  const fetchGroups = async (searchTerm = '', phoneSearchTerm = '') => {
     setLoading(true);
+    console.log('Fetching with params:', { searchTerm, phoneSearchTerm, apartmentId });
     try {
       const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/clients', {
         params: { 
           search: searchTerm,
+          phoneSearch: phoneSearchTerm,
           apartmentId: apartmentId 
         }
       });
+      console.log('API response:', res.data);
       setGroups(res.data);
-    } catch {
+    } catch (error) {
+      console.error('API error:', error);
       setGroups([]);
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchGroups(search);
+    fetchGroups(search, phoneSearch);
     // eslint-disable-next-line
-  }, [search, apartmentId]);
+  }, [search, phoneSearch, apartmentId]);
 
   useEffect(() => {
     setSearch(initialSearch);
@@ -93,6 +98,7 @@ function Clients() {
     groups.forEach(group => {
       const apartmentName = group._id.apartment;
       const clientName = group._id.clientName;
+      const phone = group._id.phone;
       
       if (!apartmentGroups[apartmentName]) {
         apartmentGroups[apartmentName] = [];
@@ -100,6 +106,7 @@ function Clients() {
       
       apartmentGroups[apartmentName].push({
         clientName,
+        phone,
         totalBookings: group.totalBookings,
         lastBooking: group.lastBooking,
         bookings: group.bookings
@@ -135,6 +142,13 @@ function Clients() {
             className="form-control w-full sm:max-w-xs bg-gray-900 text-white placeholder-gray-500"
           />
           <input
+            type="text"
+            placeholder="Search by phone number..."
+            value={phoneSearch}
+            onChange={e => setPhoneSearch(e.target.value)}
+            className="form-control w-full sm:max-w-xs bg-gray-900 text-white placeholder-gray-500"
+          />
+          <input
             type="date"
             value={startDate}
             onChange={e => setStartDate(e.target.value)}
@@ -159,26 +173,41 @@ function Clients() {
           </div>
         ) : (
           <div className="space-y-8">
-            {Object.entries(apartmentGroups).map(([apartmentName, clients]) => (
-              <div key={apartmentName} className="card">
-                <div className="mb-4">
-                  <h2 className="text-2xl font-bold text-black border-b-2 border-yellow-400 pb-2">
-                    🏢 {apartmentName}
-                  </h2>
-                  <p className="text-gray-600 text-sm mt-1">
-                    Total Clients: {clients.length} | Total Bookings: {clients.reduce((sum, client) => sum + client.totalBookings, 0)}
-                  </p>
-                </div>
+            {Object.entries(apartmentGroups).map(([apartmentName, clients]) => {
+              // Filter clients who have bookings in the selected date range
+              const clientsWithBookingsInRange = clients.filter(client => {
+                const filtered = filterBookingsByDate(client.bookings);
+                if (startDate || endDate) {
+                  return filtered.length > 0;
+                }
+                return true; // Show all clients if no date filter is applied
+              });
+
+              // Don't show apartment if no clients have bookings in the date range
+              if (clientsWithBookingsInRange.length === 0) {
+                return null;
+              }
+
+              return (
+                <div key={apartmentName} className="card">
+                  <div className="mb-4">
+                    <h2 className="text-2xl font-bold text-black border-b-2 border-yellow-400 pb-2">
+                      🏢 {apartmentName}
+                    </h2>
+                    <p className="text-gray-600 text-sm mt-1">
+                      Total Clients: {clientsWithBookingsInRange.length} | Total Bookings: {clientsWithBookingsInRange.reduce((sum, client) => sum + client.totalBookings, 0)}
+                    </p>
+                  </div>
                 
                 <ul className="space-y-4">
-                  {clients.map(client => {
+                  {clientsWithBookingsInRange.map(client => {
                     const filtered = filterBookingsByDate(client.bookings);
                     return (
                       <li key={apartmentName + client.clientName} className="apartment-item flex-col sm:flex-row items-start sm:items-center bg-gray-50 rounded-lg p-4">
                         <div className="flex-1 w-full text-left">
                           <span className="font-bold text-xl text-black block mb-1">{client.clientName}</span>
                           <div className="text-sm text-gray-600 mb-2">
-                              Total Bookings: <span className="font-medium text-black">{client.totalBookings}</span> | Last Booking: <span className="font-medium text-black">{client.lastBooking ? client.lastBooking.slice(0,10) : '-'}</span>
+                              Phone: <span className="font-medium text-black">{client.phone || 'N/A'}</span> | Total Bookings: <span className="font-medium text-black">{client.totalBookings}</span> | Last Booking: <span className="font-medium text-black">{client.lastBooking ? client.lastBooking.slice(0,10) : '-'}</span>
                           </div>
                           <div className="mt-2">
                             <span className="font-semibold text-black">Bookings in selected range:</span>
@@ -198,7 +227,7 @@ function Clients() {
                           className="btn btn-yellow btn-sm mt-4 sm:mt-0 sm:ml-4 flex-shrink-0"
                           onClick={() => { 
                             setSelectedClient({
-                              _id: { clientName: client.clientName, apartment: apartmentName },
+                              _id: { clientName: client.clientName, apartment: apartmentName, phone: client.phone },
                               totalBookings: client.totalBookings,
                               bookings: client.bookings
                             }); 
@@ -212,7 +241,8 @@ function Clients() {
                   })}
                 </ul>
               </div>
-            ))}
+            );
+          }).filter(Boolean)} {/* Remove null entries */}
           </div>
         )}
       </div>
@@ -223,7 +253,7 @@ function Clients() {
             <div className="modal-header">
               <div>
                 <h3 className="text-2xl font-bold">{selectedClient._id.clientName}</h3>
-                <p className="text-gray-400">Bookings for {selectedClient._id.apartment}</p>
+                <p className="text-gray-400">Phone: {selectedClient._id.phone || 'N/A'} | Bookings for {selectedClient._id.apartment}</p>
               </div>
               <button onClick={() => setShowModal(false)} className="close-btn">
                 &times;
