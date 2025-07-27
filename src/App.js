@@ -44,8 +44,11 @@ function App() {
         }
       } catch (error) {
         console.error('Token verification failed:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('userEmail');
+        // Only remove token if it's a 401 (unauthorized) error
+        if (error.response && error.response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userEmail');
+        }
       } finally {
         setIsLoading(false);
       }
