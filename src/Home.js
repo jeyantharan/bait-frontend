@@ -80,8 +80,16 @@ function Home({ setIsAuthenticated }) {
   const [deleteBookingSuccess, setDeleteBookingSuccess] = useState('');
   const [showCheckInCalendar, setShowCheckInCalendar] = useState(false);
   const [showCheckOutCalendar, setShowCheckOutCalendar] = useState(false);
-  
 
+  // Helper function to format date as dd-mm-yyyy
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
 
   const fetchApartments = async (pageNum = 1, searchTerm = '') => {
     try {
@@ -229,6 +237,14 @@ function Home({ setIsAuthenticated }) {
     const checkInDate = new Date(bookingForm.checkIn);
     const checkOutDate = new Date(bookingForm.checkOut);
     const allDates = getDatesInRange(checkInDate, checkOutDate);
+    
+    // Debug: Show what dates are being considered for the new booking
+    console.log('New booking dates:', {
+      checkIn: formatDate(bookingForm.checkIn),
+      checkOut: formatDate(bookingForm.checkOut),
+      allDates: allDates.map(d => formatDate(d.toISOString()))
+    });
+    
     bookings.forEach(b => {
       // Skip the current booking being edited when checking for conflicts
       if (editingBooking && b._id === editingBooking) {
@@ -243,9 +259,20 @@ function Home({ setIsAuthenticated }) {
         d.setDate(d.getDate() + 1);
       }
     });
+    
+    // Debug: Show what dates are already booked
+    console.log('Already booked dates:', Object.keys(bookedDateInfo).map(key => formatDate(key)));
+    
     bookedDatesInRange = allDates.filter(d => bookedDateInfo[d.toISOString().slice(0,10)]);
     freeDatesInRange = allDates.filter(d => !bookedDateInfo[d.toISOString().slice(0,10)]);
     hasBookedDates = bookedDatesInRange.length > 0;
+    
+    // Debug: Show conflict results
+    console.log('Conflict check:', {
+      hasBookedDates,
+      bookedDatesInRange: bookedDatesInRange.map(d => formatDate(d.toISOString())),
+      freeDatesInRange: freeDatesInRange.map(d => formatDate(d.toISOString()))
+    });
   }
 
   // Add a helper to calculate totalPaid for a booking
@@ -280,16 +307,6 @@ function Home({ setIsAuthenticated }) {
       <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
     </svg>
   );
-
-  // Helper function to format date as dd-mm-yyyy
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
 
   // Compute displayPayments for payment portal
   const displayPayments = (paymentHistory && paymentHistory.length > 0)
@@ -586,7 +603,12 @@ function Home({ setIsAuthenticated }) {
                         <Calendar
                           value={bookingForm.checkIn ? new Date(bookingForm.checkIn) : new Date()}
                           onChange={(date) => {
-                            setBookingForm(f => ({ ...f, checkIn: date.toISOString().slice(0,10) }));
+                            // Fix timezone issue by using local date string
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const localDateString = `${year}-${month}-${day}`;
+                            setBookingForm(f => ({ ...f, checkIn: localDateString }));
                             setShowCheckInCalendar(false);
                           }}
                           tileContent={({ date, view }) => {
@@ -658,7 +680,12 @@ function Home({ setIsAuthenticated }) {
                         <Calendar
                           value={bookingForm.checkOut ? new Date(bookingForm.checkOut) : new Date()}
                           onChange={(date) => {
-                            setBookingForm(f => ({ ...f, checkOut: date.toISOString().slice(0,10) }));
+                            // Fix timezone issue by using local date string
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const localDateString = `${year}-${month}-${day}`;
+                            setBookingForm(f => ({ ...f, checkOut: localDateString }));
                             setShowCheckOutCalendar(false);
                           }}
                           tileContent={({ date, view }) => {
@@ -868,7 +895,7 @@ function Home({ setIsAuthenticated }) {
                           const checkOut = new Date(b.checkOut);
                           checkIn.setHours(0,0,0,0);
                           checkOut.setHours(0,0,0,0);
-                          return clicked >= checkIn && clicked <= checkOut;
+                          return clicked >= checkIn && clicked < checkOut;
                         });
                         setSelectedDateBookings(bookingsForDate);
                         setShowDateModal(true);
