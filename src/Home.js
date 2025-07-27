@@ -20,6 +20,7 @@ function Home({ setIsAuthenticated }) {
   const [bookingForm, setBookingForm] = useState({
     clientName: '',
     phone: '',
+    email: '',
     bookingDate: '',
     checkIn: '',
     checkOut: '',
@@ -77,6 +78,10 @@ function Home({ setIsAuthenticated }) {
   const [bookingToDelete, setBookingToDelete] = useState(null);
   const [deleteBookingError, setDeleteBookingError] = useState('');
   const [deleteBookingSuccess, setDeleteBookingSuccess] = useState('');
+  const [showCheckInCalendar, setShowCheckInCalendar] = useState(false);
+  const [showCheckOutCalendar, setShowCheckOutCalendar] = useState(false);
+  
+
 
   const fetchApartments = async (pageNum = 1, searchTerm = '') => {
     try {
@@ -100,10 +105,36 @@ function Home({ setIsAuthenticated }) {
       axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
         params: { apartmentId: selectedApartment._id }
       })
-        .then(res => setBookings(res.data))
+        .then(res => {
+          setBookings(res.data);
+        })
         .catch(() => setBookings([]));
     }
   }, [selectedApartment, showModal]);
+
+  // Close calendars when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showCheckInCalendar || showCheckOutCalendar) {
+        const calendarContainers = document.querySelectorAll('.calendar-popup');
+        let clickedInside = false;
+        calendarContainers.forEach(container => {
+          if (container.contains(event.target)) {
+            clickedInside = true;
+          }
+        });
+        if (!clickedInside) {
+          setShowCheckInCalendar(false);
+          setShowCheckOutCalendar(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCheckInCalendar, showCheckOutCalendar]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -160,9 +191,10 @@ function Home({ setIsAuthenticated }) {
     printWindow.document.write(`<h2>Booking Details</h2>`);
     printWindow.document.write(`<div><strong>Client Name:</strong> ${booking.clientName}</div>`);
     printWindow.document.write(`<div><strong>Phone:</strong> ${booking.phone || ''}</div>`);
-    printWindow.document.write(`<div><strong>Booking Date:</strong> ${booking.bookingDate ? booking.bookingDate.slice(0,10) : ''}</div>`);
-    printWindow.document.write(`<div><strong>Check In:</strong> ${booking.checkIn.slice(0,10)}</div>`);
-    printWindow.document.write(`<div><strong>Check Out:</strong> ${booking.checkOut.slice(0,10)}</div>`);
+    printWindow.document.write(`<div><strong>Email:</strong> ${booking.email || ''}</div>`);
+    printWindow.document.write(`<div><strong>Booking Date:</strong> ${booking.bookingDate ? formatDate(booking.bookingDate) : ''}</div>`);
+    printWindow.document.write(`<div><strong>Check In:</strong> ${formatDate(booking.checkIn)}</div>`);
+    printWindow.document.write(`<div><strong>Check Out:</strong> ${formatDate(booking.checkOut)}</div>`);
     printWindow.document.write(`<div><strong>Guests:</strong> ${booking.guests}</div>`);
     printWindow.document.write(`<div><strong>Price:</strong> $${booking.price}</div>`);
     const totalPaid = booking.payments && booking.payments.length > 0 ? booking.payments.reduce((sum, p) => sum + Number(p.amount), 0) : 0;
@@ -177,11 +209,11 @@ function Home({ setIsAuthenticated }) {
     printWindow.close();
   };
 
-  // Helper to get all dates in a range
+  // Helper to get all dates in a range (excluding check-out date)
   function getDatesInRange(start, end) {
     const date = new Date(start);
     const dates = [];
-    while (date <= end) {
+    while (date < end) { // Changed from <= to < to exclude check-out date
       dates.push(new Date(date));
       date.setDate(date.getDate() + 1);
     }
@@ -205,7 +237,7 @@ function Home({ setIsAuthenticated }) {
       const bStart = new Date(b.checkIn);
       const bEnd = new Date(b.checkOut);
       let d = new Date(bStart);
-      while (d <= bEnd) {
+      while (d < bEnd) { // Changed from <= to < to exclude check-out date
         const key = d.toISOString().slice(0,10);
         bookedDateInfo[key] = b.clientName;
         d.setDate(d.getDate() + 1);
@@ -242,6 +274,22 @@ function Home({ setIsAuthenticated }) {
       <path d="M16 3C9.373 3 4 8.373 4 15c0 2.385.832 4.584 2.236 6.37L4 29l7.824-2.05A12.94 12.94 0 0016 27c6.627 0 12-5.373 12-12S22.627 3 16 3zm0 22.917c-2.07 0-4.09-.54-5.84-1.56l-.417-.25-4.65 1.22 1.24-4.52-.27-.44A9.93 9.93 0 016.083 15c0-5.477 4.44-9.917 9.917-9.917S25.917 9.523 25.917 15 21.477 25.917 16 25.917zm5.13-7.13c-.28-.14-1.65-.81-1.9-.9-.25-.09-.43-.14-.61.14-.18.28-.7.9-.86 1.08-.16.18-.32.2-.6.07-.28-.14-1.18-.44-2.25-1.4-.83-.74-1.39-1.65-1.55-1.93-.16-.28-.02-.43.12-.57.13-.13.28-.32.42-.48.14-.16.18-.28.28-.46.09-.18.05-.34-.02-.48-.07-.14-.61-1.47-.84-2.01-.22-.53-.45-.46-.62-.47-.16-.01-.34-.01-.52-.01-.18 0-.48.07-.73.34-.25.27-.97.95-.97 2.3 0 1.35.99 2.65 1.13 2.83.14.18 1.95 2.98 4.73 4.06.66.28 1.18.45 1.58.58.66.21 1.26.18 1.73.11.53-.08 1.65-.67 1.88-1.32.23-.65.23-1.2.16-1.32-.07-.12-.25-.19-.53-.33z"/>
     </svg>
   );
+
+  const EmailIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+      <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+    </svg>
+  );
+
+  // Helper function to format date as dd-mm-yyyy
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
 
   // Compute displayPayments for payment portal
   const displayPayments = (paymentHistory && paymentHistory.length > 0)
@@ -453,7 +501,7 @@ function Home({ setIsAuthenticated }) {
                         setBookingSuccess('Booking created successfully!');
                       }
                       setBookingForm({
-                        clientName: '', phone: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', specialNote: '', guests: '', paymentDate: ''
+                        clientName: '', phone: '', email: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', specialNote: '', guests: '', paymentDate: ''
                       });
                       // Refresh bookings
                       const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
@@ -487,6 +535,16 @@ function Home({ setIsAuthenticated }) {
                     />
                   </div>
                   <div className="form-group vertical">
+                    <label className="input-label">Email Address</label>
+                    <input
+                      type="email"
+                      className="input-field"
+                      value={bookingForm.email}
+                      onChange={e => setBookingForm(f => ({ ...f, email: e.target.value }))}
+                      placeholder="Enter email address"
+                    />
+                  </div>
+                  <div className="form-group vertical">
                     <label className="input-label">Booking Date</label>
                     <input 
                       type="date" 
@@ -497,21 +555,147 @@ function Home({ setIsAuthenticated }) {
                   </div>
                   <div className="form-group vertical">
                     <label className="input-label">Check In</label>
-                    <input 
-                      type="date" 
-                      className="input-field" 
-                      value={bookingForm.checkIn} 
-                      onChange={e => setBookingForm(f => ({ ...f, checkIn: e.target.value }))} 
-                    />
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        className="input-field" 
+                        value={bookingForm.checkIn || ''} 
+                        placeholder="Click calendar to select date"
+                        readOnly
+                        onClick={() => setShowCheckInCalendar(!showCheckInCalendar)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCheckInCalendar(!showCheckInCalendar)}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        📅
+                      </button>
+                    </div>
+                    {showCheckInCalendar && (
+                      <div className="calendar-popup fixed z-[9999] bg-white border-2 border-red-500 rounded-lg shadow-lg p-3" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', minWidth: '320px' }}>
+                        <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
+                          <h3 className="text-sm font-semibold text-gray-800">Select Check-in Date</h3>
+                          <button 
+                            onClick={() => setShowCheckInCalendar(false)}
+                            className="text-gray-400 hover:text-gray-600 text-lg font-bold"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <Calendar
+                          value={bookingForm.checkIn ? new Date(bookingForm.checkIn) : new Date()}
+                          onChange={(date) => {
+                            setBookingForm(f => ({ ...f, checkIn: date.toISOString().slice(0,10) }));
+                            setShowCheckInCalendar(false);
+                          }}
+                          tileContent={({ date, view }) => {
+                            if (view === 'month') {
+                              const foundBookings = bookings.filter(b => {
+                                if (editingBooking && b._id === editingBooking) {
+                                  return false;
+                                }
+                                const checkIn = new Date(b.checkIn);
+                                const checkOut = new Date(b.checkOut);
+                                checkIn.setHours(0,0,0,0);
+                                checkOut.setHours(0,0,0,0);
+                                date.setHours(0,0,0,0);
+                                return date >= checkIn && date < checkOut;
+                              });
+                              return foundBookings.length > 0 ? (
+                                <div className="flex justify-center items-center mt-1">
+                                  <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+                                </div>
+                              ) : null;
+                            }
+                          }}
+                          className="react-calendar-custom"
+                          tileClassName={({ date, view }) => {
+                            if (view === 'month') {
+                              const today = new Date();
+                              today.setHours(0,0,0,0);
+                              date.setHours(0,0,0,0);
+                              if (date.getTime() === today.getTime()) {
+                                return 'today-highlight';
+                              }
+                            }
+                            return '';
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="form-group vertical">
                     <label className="input-label">Check Out</label>
-                    <input 
-                      type="date" 
-                      className="input-field" 
-                      value={bookingForm.checkOut} 
-                      onChange={e => setBookingForm(f => ({ ...f, checkOut: e.target.value }))} 
-                    />
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        className="input-field" 
+                        value={bookingForm.checkOut || ''} 
+                        placeholder="Click calendar to select date"
+                        readOnly
+                        onClick={() => setShowCheckOutCalendar(!showCheckOutCalendar)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCheckOutCalendar(!showCheckOutCalendar)}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        📅
+                      </button>
+                    </div>
+                    {showCheckOutCalendar && (
+                      <div className="calendar-popup fixed z-[9999] bg-white border-2 border-red-500 rounded-lg shadow-lg p-3" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', minWidth: '320px' }}>
+                        <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
+                          <h3 className="text-sm font-semibold text-gray-800">Select Check-out Date</h3>
+                          <button 
+                            onClick={() => setShowCheckOutCalendar(false)}
+                            className="text-gray-400 hover:text-gray-600 text-lg font-bold"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <Calendar
+                          value={bookingForm.checkOut ? new Date(bookingForm.checkOut) : new Date()}
+                          onChange={(date) => {
+                            setBookingForm(f => ({ ...f, checkOut: date.toISOString().slice(0,10) }));
+                            setShowCheckOutCalendar(false);
+                          }}
+                          tileContent={({ date, view }) => {
+                            if (view === 'month') {
+                              const foundBookings = bookings.filter(b => {
+                                if (editingBooking && b._id === editingBooking) {
+                                  return false;
+                                }
+                                const checkIn = new Date(b.checkIn);
+                                const checkOut = new Date(b.checkOut);
+                                checkIn.setHours(0,0,0,0);
+                                checkOut.setHours(0,0,0,0);
+                                date.setHours(0,0,0,0);
+                                return date >= checkIn && date < checkOut;
+                              });
+                              return foundBookings.length > 0 ? (
+                                <div className="flex justify-center items-center mt-1">
+                                  <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+                                </div>
+                              ) : null;
+                            }
+                          }}
+                          className="react-calendar-custom"
+                          tileClassName={({ date, view }) => {
+                            if (view === 'month') {
+                              const today = new Date();
+                              today.setHours(0,0,0,0);
+                              date.setHours(0,0,0,0);
+                              if (date.getTime() === today.getTime()) {
+                                return 'today-highlight';
+                              }
+                            }
+                            return '';
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                   {/* Booked/Free Dates Info */}
                   {bookingForm.checkIn && bookingForm.checkOut && hasBookedDates && (
@@ -562,7 +746,7 @@ function Home({ setIsAuthenticated }) {
                                       <div className="flex-1">
                                         <div className="font-bold text-black">{booking?.clientName || bookedDateInfo[dateStr]}</div>
                                         {booking?.phone && <div className="text-xs text-gray-700">Phone: {booking.phone}</div>}
-                                        <div className="text-xs text-gray-700">Check-in: {booking?.checkIn?.slice(0,10)} | Check-out: {booking?.checkOut?.slice(0,10)}</div>
+                                        <div className="text-xs text-gray-700">Check-in: {booking?.checkIn ? formatDate(booking.checkIn) : ''} | Check-out: {booking?.checkOut ? formatDate(booking.checkOut) : ''}</div>
                                         <div className="text-xs text-gray-700">Guests: {booking?.guests} | Price: ${booking?.price} | Advance: ${booking?.advance || 0} | Due: ${booking ? booking.price - (booking.advance || 0) : ''}</div>
                                         <div className="text-xs mt-1">
                                           Status: <span className={booking?.paid ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>{booking?.paid ? 'Paid' : 'Not Paid'}</span>
@@ -580,7 +764,7 @@ function Home({ setIsAuthenticated }) {
                               <strong>Free Dates:</strong>
                               <ul className="list-disc ml-5">
                                 {freeDatesInRange.map(d => (
-                                  <li key={d.toISOString()}>{d.toISOString().slice(0,10)}</li>
+                                  <li key={d.toISOString()}>{formatDate(d.toISOString())}</li>
                                 ))}
                               </ul>
                             </div>
@@ -655,7 +839,7 @@ function Home({ setIsAuthenticated }) {
                     </button>
       
                     {editingBooking && (
-                      <button type="button" className="btn btn-secondary flex-1" onClick={() => { setEditingBooking(null); setBookingForm({ clientName: '', phone: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: '', paymentDate: '' }); }}>
+                      <button type="button" className="btn btn-secondary flex-1" onClick={() => { setEditingBooking(null); setBookingForm({ clientName: '', phone: '', email: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: '', paymentDate: '' }); }}>
                         Cancel Edit
                       </button>
                     )}
@@ -702,9 +886,9 @@ function Home({ setIsAuthenticated }) {
                             checkIn.setHours(0,0,0,0);
                             checkOut.setHours(0,0,0,0);
                             date.setHours(0,0,0,0);
-                            return date >= checkIn && date <= checkOut;
-                          });
-                          return foundBookings.length > 0 ? (
+                                                      return date >= checkIn && date < checkOut; // Changed from <= to < to exclude check-out date
+                        });
+                        return foundBookings.length > 0 ? (
                             <div
                               className="flex justify-center mt-1 relative"
                               onMouseEnter={() => { setHoveredDate(date); setHoveredBooking(foundBookings); }}
@@ -716,8 +900,8 @@ function Home({ setIsAuthenticated }) {
                                   {hoveredBooking.map((hb, index) => (
                                     <div key={index} className="mb-1 pb-1 border-b last:border-b-0 border-gray-200">
                                       <div><span className="font-semibold">{hb.clientName}</span></div>
-                                      <div>Check-in: {hb.checkIn.slice(0,10)}</div>
-                                      <div>Check-out: {hb.checkOut.slice(0,10)}</div>
+                                                                        <div>Check-in: {formatDate(hb.checkIn)}</div>
+                                  <div>Check-out: {formatDate(hb.checkOut)}</div>
                                       <div>Guests: {hb.guests}</div>
                                       <div>Price: ${hb.price}</div>
                                       <div>{hb.paid ? <span className="text-green-600 font-medium">Paid</span> : <span className="text-red-600 font-medium">Not Paid</span>}</div>
@@ -767,9 +951,10 @@ function Home({ setIsAuthenticated }) {
                               <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${isBookingPaid(b) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{isBookingPaid(b) ? 'Paid' : 'Not Paid'}</span>
                             </div>
                             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                              <span className="flex items-center gap-1"><span role="img" aria-label="Calendar">📅</span> {b.checkIn.slice(0,10)} - {b.checkOut.slice(0,10)}</span>
+                              <span className="flex items-center gap-1"><span role="img" aria-label="Calendar">📅</span> {formatDate(b.checkIn)} - {formatDate(b.checkOut)}</span>
                               <span className="flex items-center gap-1"><span role="img" aria-label="Guests">👥</span> {b.guests}</span>
                               {b.phone && <span className="flex items-center gap-1"><span role="img" aria-label="Phone">📞</span> {b.phone}</span>}
+                              {b.email && b.email.trim() !== '' && <span className="flex items-center gap-1"><span role="img" aria-label="Email">📧</span> {b.email}</span>}
                             </div>
                           </div>
                           {/* Middle: Payment Info */}
@@ -793,15 +978,28 @@ function Home({ setIsAuthenticated }) {
                                 <WhatsAppIcon />
                               </button>
                             )}
+                            {b.email && b.email.trim() !== '' && (
+                              <button
+                                title="Send Email"
+                                onClick={() => {
+                                  window.open(`mailto:${b.email}`, '_blank');
+                                }}
+                                className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-1 shadow transition flex items-center justify-center text-xs"
+                                style={{ width: 28, height: 28 }}
+                              >
+                                <EmailIcon />
+                              </button>
+                            )}
                             <button title="Print" onClick={() => printBooking(b)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full p-1 shadow transition flex items-center justify-center text-xs" aria-label="Print" style={{ width: 28, height: 28 }}><span role="img" aria-label="Print">🖨️</span></button>
                             <button title="Edit" onClick={() => {
                               setEditingBooking(b._id);
                               setBookingForm({
                                 clientName: b.clientName,
                                 phone: b.phone || '',
-                                bookingDate: b.bookingDate ? b.bookingDate.slice(0,10) : '',
-                                checkIn: b.checkIn ? b.checkIn.slice(0,10) : '',
-                                checkOut: b.checkOut ? b.checkOut.slice(0,10) : '',
+                                email: b.email && b.email.trim() !== '' ? b.email : '',
+                                bookingDate: b.bookingDate ? formatDate(b.bookingDate) : '',
+                                checkIn: b.checkIn ? formatDate(b.checkIn) : '',
+                                checkOut: b.checkOut ? formatDate(b.checkOut) : '',
                                 price: b.price,
                                 advance: b.advance || '',
                                 paymentMethod: b.paymentMethod,
@@ -904,11 +1102,12 @@ function Home({ setIsAuthenticated }) {
                         <div>
                           <div className="font-bold text-lg text-black mb-1">{b.clientName}</div>
                           <div className="text-xs text-gray-500 mb-1">Phone: {b.phone || 'N/A'}</div>
-                          <div className="text-xs text-gray-500 mb-1">Booking Date: {b.bookingDate ? b.bookingDate.slice(0,10) : 'N/A'}</div>
+                          <div className="text-xs text-gray-500 mb-1">Email: {b.email && b.email.trim() !== '' ? b.email : 'N/A'}</div>
+                                                      <div className="text-xs text-gray-500 mb-1">Booking Date: {b.bookingDate ? formatDate(b.bookingDate) : 'N/A'}</div>
                         </div>
                         <div className="flex flex-col gap-1 text-xs text-gray-700">
-                          <div>Check In: <span className="font-semibold">{b.checkIn.slice(0,10)}</span></div>
-                          <div>Check Out: <span className="font-semibold">{b.checkOut.slice(0,10)}</span></div>
+                                                      <div>Check In: <span className="font-semibold">{formatDate(b.checkIn)}</span></div>
+                            <div>Check Out: <span className="font-semibold">{formatDate(b.checkOut)}</span></div>
                           <div>Guests: <span className="font-semibold">{b.guests}</span></div>
                         </div>
                       </div>
@@ -938,15 +1137,27 @@ function Home({ setIsAuthenticated }) {
                             <WhatsAppIcon />
                           </button>
                         )}
+                        {b.email && b.email.trim() !== '' && (
+                          <button
+                            title="Send Email"
+                            onClick={() => {
+                              window.open(`mailto:${b.email}`, '_blank');
+                            }}
+                            className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 text-xs font-semibold shadow transition flex items-center justify-center"
+                          >
+                            <EmailIcon />
+                          </button>
+                        )}
                         <button title="Print" onClick={() => printBooking(b)} className="btn btn-secondary btn-xs px-1"><span role="img" aria-label="Print">🖨️</span></button>
                         <button title="Edit" onClick={() => {
                           setEditingBooking(b._id);
                           setBookingForm({
                             clientName: b.clientName,
                             phone: b.phone || '',
-                            bookingDate: b.bookingDate ? b.bookingDate.slice(0,10) : '',
-                            checkIn: b.checkIn ? b.checkIn.slice(0,10) : '',
-                            checkOut: b.checkOut ? b.checkOut.slice(0,10) : '',
+                                                            email: b.email && b.email.trim() !== '' ? b.email : '',
+                                                            bookingDate: b.bookingDate ? formatDate(b.bookingDate) : '',
+                                checkIn: b.checkIn ? formatDate(b.checkIn) : '',
+                                checkOut: b.checkOut ? formatDate(b.checkOut) : '',
                             price: b.price,
                             advance: b.advance || '',
                             paymentMethod: b.paymentMethod,
@@ -1009,7 +1220,7 @@ function Home({ setIsAuthenticated }) {
               <button onClick={() => setShowPaymentModal(false)} className="close-btn">&times;</button>
             </div>
             <div className="modal-content">
-              <div className="mb-2 text-gray-700">Booking for <span className="font-semibold">{paymentBooking.clientName}</span> ({paymentBooking.checkIn.slice(0,10)} to {paymentBooking.checkOut.slice(0,10)})</div>
+                              <div className="mb-2 text-gray-700">Booking for <span className="font-semibold">{paymentBooking.clientName}</span> ({formatDate(paymentBooking.checkIn)} to {formatDate(paymentBooking.checkOut)})</div>
               <div className="mb-2 text-sm">Total Price: <span className="font-semibold">${paymentBooking.price}</span></div>
               <div className="mb-2 text-sm">Already Paid: <span className="font-semibold">${paymentBooking.advance || 0}</span></div>
               <div className="mb-2 text-sm">Due: <span className="font-semibold">${paymentBooking.price - (paymentBooking.advance || 0)}</span></div>
@@ -1110,7 +1321,7 @@ function Home({ setIsAuthenticated }) {
                             {paymentHistory.length > 0 && (
                               <button className="text-blue-600 mr-1" onClick={() => {
                                 setIsEditingPayment(p._id || idx);
-                                setNewPayment({ date: p.date ? p.date.slice(0,10) : '', amount: p.amount, method: p.method, note: p.note });
+                                setNewPayment({ date: p.date ? formatDate(p.date) : '', amount: p.amount, method: p.method, note: p.note });
                               }}>Edit</button>
                             )}
                           </td>
@@ -1480,7 +1691,7 @@ function Home({ setIsAuthenticated }) {
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="font-semibold text-black">{bookingToDelete.clientName}</div>
                   <div className="text-sm text-gray-600">
-                    Check-in: {bookingToDelete.checkIn.slice(0,10)} | Check-out: {bookingToDelete.checkOut.slice(0,10)}
+                    Check-in: {formatDate(bookingToDelete.checkIn)} | Check-out: {formatDate(bookingToDelete.checkOut)}
                   </div>
                   <div className="text-sm text-gray-600">
                     Guests: {bookingToDelete.guests} | Price: ${bookingToDelete.price}
