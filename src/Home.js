@@ -85,6 +85,7 @@ function Home({ setIsAuthenticated }) {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -236,6 +237,13 @@ function Home({ setIsAuthenticated }) {
   if (bookingForm.checkIn && bookingForm.checkOut) {
     const checkInDate = new Date(bookingForm.checkIn);
     const checkOutDate = new Date(bookingForm.checkOut);
+    
+    // Validate that dates are valid before processing
+    if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+      console.log('Invalid dates detected:', { checkIn: bookingForm.checkIn, checkOut: bookingForm.checkOut });
+      return;
+    }
+    
     const allDates = getDatesInRange(checkInDate, checkOutDate);
     
     // Debug: Show what dates are being considered for the new booking
@@ -497,11 +505,16 @@ function Home({ setIsAuthenticated }) {
                     try {
                       if (editingBooking) {
                         await axios.put('https://backend-ruby-eight-64.vercel.app/api/bookings', {
-                          ...bookingForm,
-                          apartment: selectedApartment._id,
+                          clientName: bookingForm.clientName,
+                          phone: bookingForm.phone,
+                          email: bookingForm.email,
+                          bookingDate: bookingForm.bookingDate,
+                          checkIn: bookingForm.checkIn,
+                          checkOut: bookingForm.checkOut,
                           price: Number(bookingForm.price),
-                          advance: Number(bookingForm.advance) || 0,
-                          guests: Number(bookingForm.guests)
+                          specialNote: bookingForm.specialNote,
+                          guests: Number(bookingForm.guests),
+                          apartment: selectedApartment._id
                         }, {
                           params: { id: editingBooking }
                         });
@@ -547,7 +560,7 @@ function Home({ setIsAuthenticated }) {
                       value={bookingForm.phone}
                       onChange={e => setBookingForm(f => ({ ...f, phone: e.target.value }))}
                       placeholder="Enter phone number"
-                      pattern="[0-9+\-() ]*"
+                      pattern="[0-9+\\-() ]*"
                       maxLength={20}
                     />
                   </div>
@@ -810,35 +823,39 @@ function Home({ setIsAuthenticated }) {
                       placeholder="e.g., 250.00"
                     />
                   </div>
-                  <div className="form-group vertical">
-                    <label className="input-label">Advance Payment ($)</label>
-                    <input 
-                      type="number" 
-                      className="input-field" 
-                      value={bookingForm.advance} 
-                      onChange={e => setBookingForm(f => ({ ...f, advance: e.target.value }))} 
-                      placeholder="e.g., 50.00 (default 0)"
-                    />
-                  </div>
-                  <div className="form-group vertical">
-                    <label className="input-label">Advance Payment Date</label>
-                    <input
-                      type="date"
-                      className="input-field"
-                      value={bookingForm.paymentDate}
-                      onChange={e => setBookingForm(f => ({ ...f, paymentDate: e.target.value }))}
-                      placeholder="Select advance payment date"
-                    />
-                  </div>
-                  <div className="form-group vertical">
-                    <label className="input-label">Payment Method</label>
-                    <input 
-                      className="input-field" 
-                      value={bookingForm.paymentMethod} 
-                      onChange={e => setBookingForm(f => ({ ...f, paymentMethod: e.target.value }))} 
-                      placeholder="e.g., Cash, Card, Bank Transfer"
-                    />
-                  </div>
+                  {!editingBooking && (
+                    <>
+                      <div className="form-group vertical">
+                        <label className="input-label">Advance Payment ($)</label>
+                        <input 
+                          type="number" 
+                          className="input-field" 
+                          value={bookingForm.advance} 
+                          onChange={e => setBookingForm(f => ({ ...f, advance: e.target.value }))} 
+                          placeholder="e.g., 50.00 (default 0)"
+                        />
+                      </div>
+                      <div className="form-group vertical">
+                        <label className="input-label">Advance Payment Date</label>
+                        <input
+                          type="date"
+                          className="input-field"
+                          value={bookingForm.paymentDate}
+                          onChange={e => setBookingForm(f => ({ ...f, paymentDate: e.target.value }))}
+                          placeholder="Select advance payment date"
+                        />
+                      </div>
+                      <div className="form-group vertical">
+                        <label className="input-label">Payment Method</label>
+                        <input 
+                          className="input-field" 
+                          value={bookingForm.paymentMethod} 
+                          onChange={e => setBookingForm(f => ({ ...f, paymentMethod: e.target.value }))} 
+                          placeholder="e.g., Cash, Card, Bank Transfer"
+                        />
+                      </div>
+                    </>
+                  )}
 
                   <div className="form-group vertical">
                     <label className="input-label">Number of Guests</label>
@@ -866,7 +883,24 @@ function Home({ setIsAuthenticated }) {
                     </button>
       
                     {editingBooking && (
-                      <button type="button" className="btn btn-secondary flex-1" onClick={() => { setEditingBooking(null); setBookingForm({ clientName: '', phone: '', email: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', paid: false, specialNote: '', guests: '', paymentDate: '' }); }}>
+                      <button type="button" className="btn btn-secondary flex-1" onClick={() => { 
+                        setEditingBooking(null); 
+                        setBookingForm({ 
+                          clientName: '', 
+                          phone: '', 
+                          email: '', 
+                          bookingDate: '', 
+                          checkIn: '', 
+                          checkOut: '', 
+                          price: '', 
+                          advance: '', 
+                          paymentMethod: '', 
+                          paid: false, 
+                          specialNote: '', 
+                          guests: '', 
+                          paymentDate: '' 
+                        }); 
+                      }}>
                         Cancel Edit
                       </button>
                     )}
@@ -1024,15 +1058,15 @@ function Home({ setIsAuthenticated }) {
                                 clientName: b.clientName,
                                 phone: b.phone || '',
                                 email: b.email && b.email.trim() !== '' ? b.email : '',
-                                bookingDate: b.bookingDate ? formatDate(b.bookingDate) : '',
-                                checkIn: b.checkIn ? formatDate(b.checkIn) : '',
-                                checkOut: b.checkOut ? formatDate(b.checkOut) : '',
+                                bookingDate: b.bookingDate ? new Date(b.bookingDate).toISOString().slice(0, 10) : '',
+                                checkIn: b.checkIn ? new Date(b.checkIn).toISOString().slice(0, 10) : '',
+                                checkOut: b.checkOut ? new Date(b.checkOut).toISOString().slice(0, 10) : '',
                                 price: b.price,
-                                advance: b.advance || '',
-                                paymentMethod: b.paymentMethod,
+                                advance: '', // Don't set advance when editing
+                                paymentMethod: '', // Don't set payment method when editing
                                 specialNote: b.specialNote,
                                 guests: b.guests,
-                                paymentDate: b.payments && b.payments.length > 0 ? b.payments[0].date : '' // Set paymentDate for editing
+                                paymentDate: '' // Don't set payment date when editing
                               });
                             }} className="bg-blue-200 hover:bg-blue-300 text-blue-700 rounded-full p-1 shadow transition flex items-center justify-center text-xs" aria-label="Edit" style={{ width: 28, height: 28 }}><span role="img" aria-label="Edit">✏️</span></button>
                             <button
@@ -1181,16 +1215,16 @@ function Home({ setIsAuthenticated }) {
                           setBookingForm({
                             clientName: b.clientName,
                             phone: b.phone || '',
-                                                            email: b.email && b.email.trim() !== '' ? b.email : '',
-                                                            bookingDate: b.bookingDate ? formatDate(b.bookingDate) : '',
-                                checkIn: b.checkIn ? formatDate(b.checkIn) : '',
-                                checkOut: b.checkOut ? formatDate(b.checkOut) : '',
+                            email: b.email && b.email.trim() !== '' ? b.email : '',
+                            bookingDate: b.bookingDate ? new Date(b.bookingDate).toISOString().slice(0, 10) : '',
+                            checkIn: b.checkIn ? new Date(b.checkIn).toISOString().slice(0, 10) : '',
+                            checkOut: b.checkOut ? new Date(b.checkOut).toISOString().slice(0, 10) : '',
                             price: b.price,
-                            advance: b.advance || '',
-                            paymentMethod: b.paymentMethod,
+                            advance: '', // Don't set advance when editing
+                            paymentMethod: '', // Don't set payment method when editing
                             specialNote: b.specialNote,
                             guests: b.guests,
-                            paymentDate: b.payments && b.payments.length > 0 ? b.payments[0].date : '' // Set paymentDate for editing
+                            paymentDate: '' // Don't set payment date when editing
                           });
                           setShowDateModal(false);
                         }} className="btn btn-secondary btn-xs px-1"><span role="img" aria-label="Edit">✏️</span></button>
