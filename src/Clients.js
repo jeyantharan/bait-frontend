@@ -23,7 +23,6 @@ function Clients() {
 
   const fetchGroups = async (searchTerm = '', phoneSearchTerm = '') => {
     setLoading(true);
-    console.log('Fetching with params:', { searchTerm, phoneSearchTerm, apartmentId });
     try {
       const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/clients', {
         params: { 
@@ -32,10 +31,10 @@ function Clients() {
           apartmentId: apartmentId 
         }
       });
-      console.log('API response:', res.data);
+
       setGroups(res.data);
     } catch (error) {
-      console.error('API error:', error);
+      console.error('API Error:', error);
       setGroups([]);
     }
     setLoading(false);
@@ -91,14 +90,30 @@ function Clients() {
     return Math.abs(Number(totalPaid) - price) < 0.01 || Number(totalPaid) > price;
   }
 
+  // Helper function to format date as dd-mm-yyyy
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
   // Group clients by apartment
   const groupByApartment = () => {
     const apartmentGroups = {};
+    
+
     
     groups.forEach(group => {
       const apartmentName = group._id.apartment;
       const clientName = group._id.clientName;
       const phone = group._id.phone;
+      // Get email from the first booking in the group
+      const email = group.bookings && group.bookings.length > 0 ? group.bookings[0].email : null;
+      
+      console.log('Processing group:', { apartmentName, clientName, phone, email });
       
       if (!apartmentGroups[apartmentName]) {
         apartmentGroups[apartmentName] = [];
@@ -107,12 +122,14 @@ function Clients() {
       apartmentGroups[apartmentName].push({
         clientName,
         phone,
+        email, // Store email directly
         totalBookings: group.totalBookings,
         lastBooking: group.lastBooking,
         bookings: group.bookings
       });
     });
     
+    console.log('Apartment groups:', apartmentGroups);
     return apartmentGroups;
   };
 
@@ -207,7 +224,7 @@ function Clients() {
                         <div className="flex-1 w-full text-left">
                           <span className="font-bold text-xl text-black block mb-1">{client.clientName}</span>
                           <div className="text-sm text-gray-600 mb-2">
-                              Phone: <span className="font-medium text-black">{client.phone || 'N/A'}</span> | Total Bookings: <span className="font-medium text-black">{client.totalBookings}</span> | Last Booking: <span className="font-medium text-black">{client.lastBooking ? client.lastBooking.slice(0,10) : '-'}</span>
+                              Phone: <span className="font-medium text-black">{client.phone || 'N/A'}</span> | Email: <span className="font-medium text-black">{client.email && client.email.trim() !== '' ? client.email : 'N/A'}</span> | Total Bookings: <span className="font-medium text-black">{client.totalBookings}</span> | Last Booking: <span className="font-medium text-black">{client.lastBooking ? formatDate(client.lastBooking) : '-'}</span>
                           </div>
                           <div className="mt-2">
                             <span className="font-semibold text-black">Bookings in selected range:</span>
@@ -216,7 +233,7 @@ function Clients() {
                                 <li className="text-gray-500">No bookings in this date range.</li>
                               ) : filtered.map(b => (
                                 <li key={b._id} className="text-gray-700">
-                                  <span className="font-medium">{b.checkIn.slice(0,10)}</span> to <span className="font-medium">{b.checkOut.slice(0,10)}</span> | Guests: {b.guests} | Price: <span className="font-medium">${b.price}</span> | Paid: <span className="font-medium">${getTotalPaid(b)}</span> | Due: <span className="font-medium">${getDue(b)}</span> | {isBookingPaid(b) ? <span className="status-paid">Paid</span> : <span className="status-unpaid">Not Paid</span>}
+                                  <span className="font-medium">{formatDate(b.checkIn)}</span> to <span className="font-medium">{formatDate(b.checkOut)}</span> | Guests: {b.guests} | Price: <span className="font-medium">${b.price}</span> | Paid: <span className="font-medium">${getTotalPaid(b)}</span> | Due: <span className="font-medium">${getDue(b)}</span> | {isBookingPaid(b) ? <span className="status-paid">Paid</span> : <span className="status-unpaid">Not Paid</span>}
                                   {b.specialNote && <span className="text-gray-500 text-xs italic"> — {b.specialNote}</span>}
                                 </li>
                               ))}
@@ -227,7 +244,7 @@ function Clients() {
                           className="btn btn-yellow btn-sm mt-4 sm:mt-0 sm:ml-4 flex-shrink-0"
                           onClick={() => { 
                             setSelectedClient({
-                              _id: { clientName: client.clientName, apartment: apartmentName, phone: client.phone },
+                              _id: { clientName: client.clientName, apartment: apartmentName, phone: client.phone, email: client.email || '' },
                               totalBookings: client.totalBookings,
                               bookings: client.bookings
                             }); 
@@ -253,7 +270,7 @@ function Clients() {
             <div className="modal-header">
               <div>
                 <h3 className="text-2xl font-bold">{selectedClient._id.clientName}</h3>
-                <p className="text-gray-400">Phone: {selectedClient._id.phone || 'N/A'} | Bookings for {selectedClient._id.apartment}</p>
+                <p className="text-gray-400">Phone: {selectedClient._id.phone || 'N/A'} | Email: {selectedClient._id.email && selectedClient._id.email.trim() !== '' ? selectedClient._id.email : 'N/A'} | Bookings for {selectedClient._id.apartment}</p>
               </div>
               <button onClick={() => setShowModal(false)} className="close-btn">
                 &times;
@@ -272,7 +289,7 @@ function Clients() {
                       <div>
                         <div className="booking-name">{b.clientName}</div>
                         <div className="booking-details">
-                          {b.checkIn.slice(0,10)} to {b.checkOut.slice(0,10)} | Guests: {b.guests}
+                                                        {formatDate(b.checkIn)} to {formatDate(b.checkOut)} | Guests: {b.guests}
                         </div>
                         <div className="booking-details">
                           Price: <span className="font-semibold">${b.price}</span> | Paid: <span className="font-semibold">${getTotalPaid(b)}</span> | Due: <span className="font-semibold">${getDue(b)}</span> | Status: <span className={isBookingPaid(b) ? 'status-paid' : 'status-unpaid'}>{isBookingPaid(b) ? 'Paid' : 'Not Paid'}</span>
