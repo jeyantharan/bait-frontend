@@ -878,15 +878,7 @@ function Home({ setIsAuthenticated }) {
                           placeholder="Select advance payment date"
                         />
                       </div>
-                      <div className="form-group vertical">
-                        <label className="input-label">Payment Method</label>
-                        <input 
-                          className="input-field" 
-                          value={bookingForm.paymentMethod} 
-                          onChange={e => setBookingForm(f => ({ ...f, paymentMethod: e.target.value }))} 
-                          placeholder="e.g., Cash, Card, Bank Transfer"
-                        />
-                      </div>
+
                     </>
                   )}
 
