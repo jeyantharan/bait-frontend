@@ -233,7 +233,7 @@ function Clients() {
                                 <li className="text-gray-500">No bookings in this date range.</li>
                               ) : filtered.map(b => (
                                 <li key={b._id} className="text-gray-700">
-                                  <span className="font-medium">{formatDate(b.checkIn)}</span> to <span className="font-medium">{formatDate(b.checkOut)}</span> | Guests: {b.guests} | Price: <span className="font-medium">${b.price}</span> | Pagato: <span className="font-medium">${getTotalPaid(b)}</span> | Due: <span className="font-medium">${getDue(b)}</span> | {isBookingPaid(b) ? <span className="status-paid">Pagato</span> : <span className="status-unpaid">Non pagato</span>}
+                                  <span className="font-medium">{formatDate(b.checkIn)}</span> to <span className="font-medium">{formatDate(b.checkOut)}</span> | Guests: {b.guests} | Price: <span className="font-medium">€{b.price}</span> | Pagato: <span className="font-medium">€{getTotalPaid(b)}</span> | Mancano: <span className="font-medium">€{getDue(b)}</span> | {isBookingPaid(b) ? <span className="status-paid">Pagato</span> : <span className="status-unpaid">Non pagato</span>}
                                   {b.specialNote && <span className="text-gray-500 text-xs italic"> — {b.specialNote}</span>}
                                 </li>
                               ))}
@@ -292,7 +292,7 @@ function Clients() {
                                                         {formatDate(b.checkIn)} to {formatDate(b.checkOut)} | Guests: {b.guests}
                         </div>
                         <div className="booking-details">
-                          Price: <span className="font-semibold">${b.price}</span> | Paid: <span className="font-semibold">${getTotalPaid(b)}</span> | Due: <span className="font-semibold">${getDue(b)}</span> | Stato: <span className={isBookingPaid(b) ? 'status-paid' : 'status-unpaid'}>{isBookingPaid(b) ? 'Pagato' : 'Non pagato'}</span>
+                          Price: <span className="font-semibold">€{b.price}</span> | Paid: <span className="font-semibold">€{getTotalPaid(b)}</span> | Mancano: <span className="font-semibold">€{getDue(b)}</span> | Stato: <span className={isBookingPaid(b) ? 'status-paid' : 'status-unpaid'}>{isBookingPaid(b) ? 'Pagato' : 'Non pagato'}</span>
                         </div>
                         <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
                       </div>
