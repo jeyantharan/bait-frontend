@@ -69,7 +69,7 @@ function Clients() {
     });
   };
 
-  // Helper to get total paid for a booking
+  // Helper to get Totale pagato for a booking
   function getTotalPaid(booking) {
     if (booking.payments && booking.payments.length > 0) {
       return booking.payments.reduce((sum, p) => sum + Number(p.amount), 0);
@@ -146,21 +146,21 @@ function Clients() {
             Back to Home
           </button>
           <h1 className="text-3xl font-extrabold text-white flex-1 min-w-max text-center sm:text-left">
-            👥 Client History - {apartmentName}
+            👥 Storico clienti - {apartmentName}
           </h1>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
           <input
             type="text"
-            placeholder="Search by client name..."
+            placeholder="Search by Nome cliente..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="form-control w-full sm:max-w-xs bg-gray-900 text-white placeholder-gray-500"
           />
           <input
             type="text"
-            placeholder="Search by phone number..."
+            placeholder="Search by Numero di telefono..."
             value={phoneSearch}
             onChange={e => setPhoneSearch(e.target.value)}
             className="form-control w-full sm:max-w-xs bg-gray-900 text-white placeholder-gray-500"
@@ -185,7 +185,7 @@ function Clients() {
           <div className="text-gray-500 text-center py-8">Loading client data...</div>
         ) : Object.keys(apartmentGroups).length === 0 ? (
           <div className="empty-state">
-            <h3>No client history found for {apartmentName}.</h3>
+            <h3>No Storico clienti found for {apartmentName}.</h3>
             <p>Clients and their bookings will appear here.</p>
           </div>
         ) : (
@@ -212,7 +212,7 @@ function Clients() {
                       🏢 {apartmentName}
                     </h2>
                     <p className="text-gray-600 text-sm mt-1">
-                      Total Clients: {clientsWithBookingsInRange.length} | Total Bookings: {clientsWithBookingsInRange.reduce((sum, client) => sum + client.totalBookings, 0)}
+                      Totale clienti: {clientsWithBookingsInRange.length} | Totale prenotazioni: {clientsWithBookingsInRange.reduce((sum, client) => sum + client.totalBookings, 0)}
                     </p>
                   </div>
                 
@@ -224,16 +224,16 @@ function Clients() {
                         <div className="flex-1 w-full text-left">
                           <span className="font-bold text-xl text-black block mb-1">{client.clientName}</span>
                           <div className="text-sm text-gray-600 mb-2">
-                              Phone: <span className="font-medium text-black">{client.phone || 'N/A'}</span> | Email: <span className="font-medium text-black">{client.email && client.email.trim() !== '' ? client.email : 'N/A'}</span> | Total Bookings: <span className="font-medium text-black">{client.totalBookings}</span> | Last Booking: <span className="font-medium text-black">{client.lastBooking ? formatDate(client.lastBooking) : '-'}</span>
+                              Phone: <span className="font-medium text-black">{client.phone || 'N/A'}</span> | Email: <span className="font-medium text-black">{client.email && client.email.trim() !== '' ? client.email : 'N/A'}</span> | Totale prenotazioni: <span className="font-medium text-black">{client.totalBookings}</span> | Last Booking: <span className="font-medium text-black">{client.lastBooking ? formatDate(client.lastBooking) : '-'}</span>
                           </div>
                           <div className="mt-2">
-                            <span className="font-semibold text-black">Bookings in selected range:</span>
+                            <span className="font-semibold text-black">Prenotazioni nell'intervallo selezionato:</span>
                             <ul className="ml-4 mt-1 list-disc text-sm space-y-1">
                               {filtered.length === 0 ? (
                                 <li className="text-gray-500">No bookings in this date range.</li>
                               ) : filtered.map(b => (
                                 <li key={b._id} className="text-gray-700">
-                                  <span className="font-medium">{formatDate(b.checkIn)}</span> to <span className="font-medium">{formatDate(b.checkOut)}</span> | Guests: {b.guests} | Price: <span className="font-medium">${b.price}</span> | Paid: <span className="font-medium">${getTotalPaid(b)}</span> | Due: <span className="font-medium">${getDue(b)}</span> | {isBookingPaid(b) ? <span className="status-paid">Paid</span> : <span className="status-unpaid">Not Paid</span>}
+                                  <span className="font-medium">{formatDate(b.checkIn)}</span> to <span className="font-medium">{formatDate(b.checkOut)}</span> | Guests: {b.guests} | Price: <span className="font-medium">${b.price}</span> | Pagato: <span className="font-medium">${getTotalPaid(b)}</span> | Due: <span className="font-medium">${getDue(b)}</span> | {isBookingPaid(b) ? <span className="status-paid">Pagato</span> : <span className="status-unpaid">Non pagato</span>}
                                   {b.specialNote && <span className="text-gray-500 text-xs italic"> — {b.specialNote}</span>}
                                 </li>
                               ))}
@@ -251,7 +251,7 @@ function Clients() {
                             setShowModal(true); 
                           }}
                         >
-                          View All Bookings
+                          Vedi tutte le prenotazioni
                         </button>
                       </li>
                     );
@@ -277,11 +277,11 @@ function Clients() {
               </button>
             </div>
             <div className="modal-content">
-              <div className="mb-4 text-sm text-gray-700">Total Bookings: <span className="font-semibold">{selectedClient.totalBookings}</span></div>
+              <div className="mb-4 text-sm text-gray-700">Totale prenotazioni: <span className="font-semibold">{selectedClient.totalBookings}</span></div>
               <ul className="max-h-60 overflow-y-auto space-y-3 pr-2">
                 {selectedClient.bookings.length === 0 ? (
                   <div className="empty-state text-sm py-4">
-                    <p>No bookings found for this client.</p>
+                    <p>Nessuna prenotazione trovata for this client.</p>
                   </div>
                 ) : (
                   selectedClient.bookings.map(b => (
@@ -292,7 +292,7 @@ function Clients() {
                                                         {formatDate(b.checkIn)} to {formatDate(b.checkOut)} | Guests: {b.guests}
                         </div>
                         <div className="booking-details">
-                          Price: <span className="font-semibold">${b.price}</span> | Paid: <span className="font-semibold">${getTotalPaid(b)}</span> | Due: <span className="font-semibold">${getDue(b)}</span> | Status: <span className={isBookingPaid(b) ? 'status-paid' : 'status-unpaid'}>{isBookingPaid(b) ? 'Paid' : 'Not Paid'}</span>
+                          Price: <span className="font-semibold">${b.price}</span> | Paid: <span className="font-semibold">${getTotalPaid(b)}</span> | Due: <span className="font-semibold">${getDue(b)}</span> | Stato: <span className={isBookingPaid(b) ? 'status-paid' : 'status-unpaid'}>{isBookingPaid(b) ? 'Pagato' : 'Non pagato'}</span>
                         </div>
                         <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
                       </div>
