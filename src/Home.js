@@ -238,10 +238,10 @@ function Home({ setIsAuthenticated }) {
     printWindow.document.write(`<div><strong>Check In:</strong> ${formatDate(booking.checkIn)}</div>`);
     printWindow.document.write(`<div><strong>Check Out:</strong> ${formatDate(booking.checkOut)}</div>`);
     printWindow.document.write(`<div><strong>Guests:</strong> ${booking.guests}</div>`);
-    printWindow.document.write(`<div><strong>Price:</strong> $${booking.price}</div>`);
+    printWindow.document.write(`<div><strong>Price:</strong> €${booking.price}</div>`);
     const totalPaid = booking.payments && booking.payments.length > 0 ? booking.payments.reduce((sum, p) => sum + Number(p.amount), 0) : 0;
-    printWindow.document.write(`<div><strong>Pagato:</strong> $${totalPaid}</div>`);
-    printWindow.document.write(`<div><strong>Due:</strong> $${booking.paid ? 0 : (booking.price - totalPaid)}</div>`);
+    printWindow.document.write(`<div><strong>Pagato:</strong> €${totalPaid}</div>`);
+    printWindow.document.write(`<div><strong>Mancano:</strong> €${booking.paid ? 0 : (booking.price - totalPaid)}</div>`);
     printWindow.document.write(`<div><strong>Stato:</strong> ${((Math.abs(Number(totalPaid) - Number(booking.price)) < 0.01) || (Number(totalPaid) > Number(booking.price))) ? 'Paid' : 'Non pagato'}</div>`);
     printWindow.document.write(`<div><strong>Special Note:</strong> ${booking.specialNote || 'N/A'}</div>`);
     printWindow.document.write('</body></html>');
@@ -820,7 +820,7 @@ function Home({ setIsAuthenticated }) {
                                         <div className="font-bold text-black">{booking?.clientName || bookedDateInfo[dateStr]}</div>
                                         {booking?.phone && <div className="text-xs text-gray-700">Phone: {booking.phone}</div>}
                                         <div className="text-xs text-gray-700">Check-in: {booking?.checkIn ? formatDate(booking.checkIn) : ''} | Check-out: {booking?.checkOut ? formatDate(booking.checkOut) : ''}</div>
-                                        <div className="text-xs text-gray-700">Guests: {booking?.guests} | Price: ${booking?.price} | Advance: ${booking?.advance || 0} | Due: ${booking ? booking.price - (booking.advance || 0) : ''}</div>
+                                        <div className="text-xs text-gray-700">Guests: {booking?.guests} | Price: €{booking?.price} | Advance: €{booking?.advance || 0} | Mancano: €{booking ? booking.price - (booking.advance || 0) : ''}</div>
                                         <div className="text-xs mt-1">
                                         Stato: <span className={booking?.paid ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>{booking?.paid ? 'Pagato' : 'Non pagato'}</span>
                                         </div>
@@ -847,7 +847,7 @@ function Home({ setIsAuthenticated }) {
                     </div>
                   )}
                   <div className="form-group vertical">
-                    <label className="input-label">Prezzo ($)</label>
+                    <label className="input-label">Prezzo (€)</label>
                     <input 
                       type="number" 
                       className="input-field" 
@@ -859,7 +859,7 @@ function Home({ setIsAuthenticated }) {
                   {!editingBooking && (
                     <>
                       <div className="form-group vertical">
-                        <label className="input-label">Advance Pagamento ($)</label>
+                        <label className="input-label">Advance Pagamento (€)</label>
                         <input 
                           type="number" 
                           className="input-field" 
@@ -989,7 +989,7 @@ function Home({ setIsAuthenticated }) {
                                                                         <div>Check-in: {formatDate(hb.checkIn)}</div>
                                   <div>Check-out: {formatDate(hb.checkOut)}</div>
                                       <div>Ospiti: {hb.guests}</div>
-                                      <div>Prezzo: ${hb.price}</div>
+                                      <div>Prezzo: €{hb.price}</div>
                                       <div>{hb.paid ? <span className="text-green-600 font-medium">Pagato</span> : <span className="text-red-600 font-medium">Non pagato</span>}</div>
                                       <div className="text-gray-500 text-xs">{hb.specialNote || 'No special note.'}</div>
                                     </div>
@@ -1184,7 +1184,7 @@ function Home({ setIsAuthenticated }) {
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="text-base font-bold text-black">${b.price}</div>
+                                <div className="text-base font-bold text-black">€{b.price}</div>
                                 <div className={`text-xs font-semibold ${isBookingPaid(b) ? 'text-green-600' : 'text-red-600'}`}>
                                   {isBookingPaid(b) ? '✅ Pagato' : '❌ Non pagato'}
                                 </div>
@@ -1213,11 +1213,11 @@ function Home({ setIsAuthenticated }) {
                               <div className="space-y-0.5">
                                 <div className="flex items-center gap-1 text-xs">
                                   <span className="text-gray-500">💰</span>
-                                  <span className="font-medium text-black">Pagato: ${getTotalPaid(b)}</span>
+                                  <span className="font-medium text-black">Pagato: €{getTotalPaid(b)}</span>
                                 </div>
                                 <div className="flex items-center gap-1 text-xs">
                                   <span className="text-gray-500">💳</span>
-                                  <span className="font-medium text-black">Due: ${getDue(b)}</span>
+                                  <span className="font-medium text-black">Mancano: €{getDue(b)}</span>
                                 </div>
                                 <div className="flex items-center gap-1 text-xs">
                                   <span className="text-gray-500">📝</span>
@@ -1394,7 +1394,7 @@ function Home({ setIsAuthenticated }) {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-black">${b.price}</div>
+                            <div className="text-2xl font-bold text-black">€{b.price}</div>
                             <div className={`text-sm font-semibold ${isBookingPaid(b) ? 'text-green-600' : 'text-red-600'}`}>
                               {isBookingPaid(b) ? '✅ Pagato' : '❌ Non pagato'}
                             </div>
@@ -1423,11 +1423,11 @@ function Home({ setIsAuthenticated }) {
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-sm">
                               <span className="text-gray-500">💰</span>
-                              <span className="font-medium text-black">Pagato: ${getTotalPaid(b)}</span>
+                              <span className="font-medium text-black">Pagato: €{getTotalPaid(b)}</span>
                             </div>
                             <div className="flex items-center gap-2 text-sm">
                               <span className="text-gray-500">💳</span>
-                              <span className="font-medium text-black">Due: ${getDue(b)}</span>
+                              <span className="font-medium text-black">Mancano: €{getDue(b)}</span>
                             </div>
                             <div className="flex items-center gap-2 text-sm">
                               <span className="text-gray-500">📝</span>
@@ -1561,9 +1561,9 @@ function Home({ setIsAuthenticated }) {
             </div>
             <div className="modal-content">
                               <div className="mb-2 text-gray-700">Booking for <span className="font-semibold">{paymentBooking.clientName}</span> ({formatDate(paymentBooking.checkIn)} to {formatDate(paymentBooking.checkOut)})</div>
-              <div className="mb-2 text-sm">Prezzo totale: <span className="font-semibold">${paymentBooking.price}</span></div>
-              <div className="mb-2 text-sm">Already Pagato: <span className="font-semibold">${paymentBooking.advance || 0}</span></div>
-              <div className="mb-2 text-sm">Due: <span className="font-semibold">${paymentBooking.price - (paymentBooking.advance || 0)}</span></div>
+              <div className="mb-2 text-sm">Prezzo totale: <span className="font-semibold">€{paymentBooking.price}</span></div>
+              <div className="mb-2 text-sm">Already Pagato: <span className="font-semibold">€{paymentBooking.advance || 0}</span></div>
+              <div className="mb-2 text-sm">Mancano: <span className="font-semibold">€{paymentBooking.price - (paymentBooking.advance || 0)}</span></div>
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 setPaymentError('');
@@ -1629,9 +1629,9 @@ function Home({ setIsAuthenticated }) {
             <div className="modal-content">
               {/* Summary */}
               <div className="mb-4 p-2 bg-gray-50 rounded flex flex-wrap gap-4 text-sm">
-                <div>Prezzo totale: <span className="font-semibold">${paymentsBooking.price}</span></div>
-                <div>Totale pagato: <span className="font-semibold">${(displayPayments.reduce((sum, p) => sum + Number(p.amount), 0)).toFixed(2)}</span></div>
-                <div>Saldo dovuto: <span className="font-semibold">${(paymentsBooking.price - displayPayments.reduce((sum, p) => sum + Number(p.amount), 0)).toFixed(2)}</span></div>
+                <div>Prezzo totale: <span className="font-semibold">€{paymentsBooking.price}</span></div>
+                <div>Totale pagato: <span className="font-semibold">€{(displayPayments.reduce((sum, p) => sum + Number(p.amount), 0)).toFixed(2)}</span></div>
+                <div>Saldo dovuto: <span className="font-semibold">€{(paymentsBooking.price - displayPayments.reduce((sum, p) => sum + Number(p.amount), 0)).toFixed(2)}</span></div>
                 <div>Stato: {displayPayments.reduce((sum, p) => sum + Number(p.amount), 0) >= paymentsBooking.price ? <span className="text-green-600 font-semibold">Pagato</span> : <span className="text-red-600 font-semibold">Non pagato</span>}</div>
               </div>
               {/* Payment History Table */}
@@ -1654,7 +1654,7 @@ function Home({ setIsAuthenticated }) {
                       {displayPayments.map((p, idx) => (
                         <tr key={p._id || idx}>
                           <td className="p-1 border">{p.date ? new Date(p.date).toLocaleDateString() : ''}</td>
-                          <td className="p-1 border">${p.amount}</td>
+                          <td className="p-1 border">€{p.amount}</td>
                           <td className="p-1 border">{p.method}</td>
                           <td className="p-1 border">{p.note}</td>
                           <td className="p-1 border">
@@ -2034,7 +2034,7 @@ function Home({ setIsAuthenticated }) {
                     Check-in: {formatDate(bookingToDelete.checkIn)} | Check-out: {formatDate(bookingToDelete.checkOut)}
                   </div>
                   <div className="text-sm text-gray-600">
-                  Ospiti: {bookingToDelete.guests} | Price: ${bookingToDelete.price}
+                  Ospiti: {bookingToDelete.guests} | Price: €{bookingToDelete.price}
                   </div>
                 </div>
                 <p className="text-red-600 text-sm mt-2 font-semibold">This action cannot be undone!</p>
