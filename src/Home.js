@@ -81,6 +81,11 @@ function Home({ setIsAuthenticated }) {
   const [showCheckInCalendar, setShowCheckInCalendar] = useState(false);
   const [showCheckOutCalendar, setShowCheckOutCalendar] = useState(false);
 
+  // Filter states for bookings
+  const [bookingStatusFilter, setBookingStatusFilter] = useState('all'); // 'all', 'paid', 'not-paid'
+  const [bookingDateFilter, setBookingDateFilter] = useState('all'); // 'all', 'upcoming', 'past', 'current'
+  const [bookingPriceFilter, setBookingPriceFilter] = useState('all'); // 'all', 'high', 'medium', 'low'
+
   // Helper function to format date as dd-mm-yyyy
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -181,6 +186,34 @@ function Home({ setIsAuthenticated }) {
   // Filter and paginate bookings
   const filteredBookings = bookings
     .filter(b => b.clientName.toLowerCase().includes(bookingSearch.toLowerCase()))
+    .filter(b => {
+      // Status filter
+      if (bookingStatusFilter === 'paid') return isBookingPaid(b);
+      if (bookingStatusFilter === 'not-paid') return !isBookingPaid(b);
+      return true; // 'all'
+    })
+    .filter(b => {
+      // Date filter
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const checkIn = new Date(b.checkIn);
+      const checkOut = new Date(b.checkOut);
+      checkIn.setHours(0, 0, 0, 0);
+      checkOut.setHours(0, 0, 0, 0);
+      
+      if (bookingDateFilter === 'upcoming') return checkIn > today;
+      if (bookingDateFilter === 'past') return checkOut < today;
+      if (bookingDateFilter === 'current') return checkIn <= today && checkOut >= today;
+      return true; // 'all'
+    })
+    .filter(b => {
+      // Price filter
+      const price = Number(b.price);
+      if (bookingPriceFilter === 'high') return price >= 500;
+      if (bookingPriceFilter === 'medium') return price >= 200 && price < 500;
+      if (bookingPriceFilter === 'low') return price < 200;
+      return true; // 'all'
+    })
     .sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn)); // Sort by check-in date
   const totalBookingPages = Math.ceil(filteredBookings.length / BOOKINGS_PER_PAGE);
   const paginatedBookings = filteredBookings.slice((bookingPage - 1) * BOOKINGS_PER_PAGE, bookingPage * BOOKINGS_PER_PAGE);
@@ -997,126 +1030,312 @@ function Home({ setIsAuthenticated }) {
                       className="border border-gray-300 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 flex-1 text-black bg-white"
                     />
                   </div>
+                  
+                  {/* Filter Buttons */}
+                  <div className="space-y-2 mb-3">
+                    {/* Status Filter */}
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-gray-700">📊 Status</label>
+                      <div className="flex flex-wrap gap-1">
+                        <button
+                          onClick={() => { setBookingStatusFilter('all'); setBookingPage(1); }}
+                          className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
+                            bookingStatusFilter === 'all' 
+                              ? 'bg-black text-white shadow-sm' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          }`}
+                        >
+                          📋 All
+                        </button>
+                        <button
+                          onClick={() => { setBookingStatusFilter('paid'); setBookingPage(1); }}
+                          className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
+                            bookingStatusFilter === 'paid' 
+                              ? 'bg-green-600 text-white shadow-sm' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          }`}
+                        >
+                          ✅ Paid
+                        </button>
+                        <button
+                          onClick={() => { setBookingStatusFilter('not-paid'); setBookingPage(1); }}
+                          className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
+                            bookingStatusFilter === 'not-paid' 
+                              ? 'bg-red-600 text-white shadow-sm' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          }`}
+                        >
+                          ❌ Not Paid
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Date Filter */}
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-gray-700">📅 Date</label>
+                      <div className="flex flex-wrap gap-1">
+                        <button
+                          onClick={() => { setBookingDateFilter('all'); setBookingPage(1); }}
+                          className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
+                            bookingDateFilter === 'all' 
+                              ? 'bg-black text-white shadow-sm' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          }`}
+                        >
+                          📋 All
+                        </button>
+                        <button
+                          onClick={() => { setBookingDateFilter('upcoming'); setBookingPage(1); }}
+                          className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
+                            bookingDateFilter === 'upcoming' 
+                              ? 'bg-blue-600 text-white shadow-sm' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          }`}
+                        >
+                          🔮 Upcoming
+                        </button>
+                        <button
+                          onClick={() => { setBookingDateFilter('current'); setBookingPage(1); }}
+                          className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
+                            bookingDateFilter === 'current' 
+                              ? 'bg-yellow-400 text-black shadow-sm' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          }`}
+                        >
+                          📅 Current
+                        </button>
+                        <button
+                          onClick={() => { setBookingDateFilter('past'); setBookingPage(1); }}
+                          className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
+                            bookingDateFilter === 'past' 
+                              ? 'bg-gray-600 text-white shadow-sm' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          }`}
+                        >
+                          📚 Past
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Price Filter */}
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-gray-700">💰 Price</label>
+                      <div className="flex flex-wrap gap-1">
+                        <button
+                          onClick={() => { setBookingPriceFilter('all'); setBookingPage(1); }}
+                          className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
+                            bookingPriceFilter === 'all' 
+                              ? 'bg-black text-white shadow-sm' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          }`}
+                        >
+                          📋 All
+                        </button>
+                        <button
+                          onClick={() => { setBookingPriceFilter('high'); setBookingPage(1); }}
+                          className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
+                            bookingPriceFilter === 'high' 
+                              ? 'bg-purple-600 text-white shadow-sm' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          }`}
+                        >
+                          💰 High
+                        </button>
+                        <button
+                          onClick={() => { setBookingPriceFilter('medium'); setBookingPage(1); }}
+                          className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
+                            bookingPriceFilter === 'medium' 
+                              ? 'bg-orange-500 text-white shadow-sm' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          }`}
+                        >
+                          💵 Medium
+                        </button>
+                        <button
+                          onClick={() => { setBookingPriceFilter('low'); setBookingPage(1); }}
+                          className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
+                            bookingPriceFilter === 'low' 
+                              ? 'bg-green-600 text-white shadow-sm' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          }`}
+                        >
+                          💸 Low
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   {paginatedBookings.length === 0 ? (
-                    <div className="empty-state text-sm py-4">
-                      <p>No bookings found for this search.</p>
+                    <div className="text-center py-4">
+                      <div className="text-2xl mb-1">📋</div>
+                      <h4 className="text-sm font-semibold text-black mb-1">No Bookings Found</h4>
+                      <p className="text-gray-500 text-xs">Try adjusting your search criteria.</p>
                     </div>
                   ) : (
-                    <ul className="mt-2 space-y-3 pr-2">
+                    <div className="space-y-2 mt-2">
                       {paginatedBookings.map(b => (
-                        <li key={b._id} className="flex flex-col sm:flex-row items-center justify-between bg-gray-50 border border-gray-200 rounded-lg shadow p-2 mb-2 hover:shadow-lg transition group">
-                          {/* Left: Main Info */}
-                          <div className="flex-1 flex flex-col gap-0 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className="font-bold text-base text-black truncate max-w-[120px]">{b.clientName}</span>
-                              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${isBookingPaid(b) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{isBookingPaid(b) ? 'Paid' : 'Not Paid'}</span>
+                        <div key={b._id} className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group">
+                          {/* Header */}
+                          <div className="bg-gray-50 px-2.5 py-1.5 border-b border-gray-200">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <h4 className="text-sm font-bold text-black mb-0.5">{b.clientName}</h4>
+                                <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                  <span className="flex items-center gap-1">
+                                    <span className="w-1 h-1 rounded-full bg-yellow-400"></span>
+                                    {formatDate(b.checkIn)} - {formatDate(b.checkOut)}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <span className="text-gray-400">👥</span>
+                                    {b.guests} guest{b.guests !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-base font-bold text-black">${b.price}</div>
+                                <div className={`text-xs font-semibold ${isBookingPaid(b) ? 'text-green-600' : 'text-red-600'}`}>
+                                  {isBookingPaid(b) ? '✅ Paid' : '❌ Not Paid'}
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                              <span className="flex items-center gap-1"><span role="img" aria-label="Calendar">📅</span> {formatDate(b.checkIn)} - {formatDate(b.checkOut)}</span>
-                              <span className="flex items-center gap-1"><span role="img" aria-label="Guests">👥</span> {b.guests}</span>
-                              {b.phone && <span className="flex items-center gap-1"><span role="img" aria-label="Phone">📞</span> {b.phone}</span>}
-                              {b.email && b.email.trim() !== '' && <span className="flex items-center gap-1"><span role="img" aria-label="Email">📧</span> {b.email}</span>}
+                          </div>
+
+                          {/* Content */}
+                          <div className="p-2.5">
+                            {/* Contact & Payment Info */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-1 text-xs">
+                                  <span className="text-gray-500">📞</span>
+                                  <span className="font-medium text-black">{b.phone || 'N/A'}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs">
+                                  <span className="text-gray-500">📧</span>
+                                  <span className="font-medium text-black">{b.email && b.email.trim() !== '' ? b.email : 'N/A'}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs">
+                                  <span className="text-gray-500">📅</span>
+                                  <span className="font-medium text-black">Booked: {b.bookingDate ? formatDate(b.bookingDate) : 'N/A'}</span>
+                                </div>
+                              </div>
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-1 text-xs">
+                                  <span className="text-gray-500">💰</span>
+                                  <span className="font-medium text-black">Paid: ${getTotalPaid(b)}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs">
+                                  <span className="text-gray-500">💳</span>
+                                  <span className="font-medium text-black">Due: ${getDue(b)}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs">
+                                  <span className="text-gray-500">📝</span>
+                                  <span className="font-medium text-black">{b.specialNote || 'No special notes'}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex flex-wrap gap-1 pt-1.5 border-t border-gray-100">
+                              {b.phone && (
+                                <button
+                                  title="Contact via WhatsApp"
+                                  onClick={() => {
+                                    const phone = b.phone.replace(/[^\d]/g, '');
+                                    window.open(`https://wa.me/${phone}`, '_blank');
+                                  }}
+                                  className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-1.5 py-0.5 rounded text-xs font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
+                                >
+                                  <WhatsAppIcon />
+                                  WhatsApp
+                                </button>
+                              )}
+                              {b.email && b.email.trim() !== '' && (
+                                <button
+                                  title="Send Email"
+                                  onClick={() => {
+                                    window.open(`mailto:${b.email}`, '_blank');
+                                  }}
+                                  className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-1.5 py-0.5 rounded text-xs font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
+                                >
+                                  <EmailIcon />
+                                  Email
+                                </button>
+                              )}
+                              <button 
+                                title="Print" 
+                                onClick={() => printBooking(b)} 
+                                className="flex items-center gap-1 bg-gray-500 hover:bg-gray-600 text-white px-1.5 py-0.5 rounded text-xs font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
+                              >
+                                🖨️ Print
+                              </button>
+                              <button 
+                                title="Edit" 
+                                onClick={() => {
+                                  setEditingBooking(b._id);
+                                  setBookingForm({
+                                    clientName: b.clientName,
+                                    phone: b.phone || '',
+                                    email: b.email && b.email.trim() !== '' ? b.email : '',
+                                    bookingDate: b.bookingDate ? new Date(b.bookingDate).toISOString().slice(0, 10) : '',
+                                    checkIn: b.checkIn ? new Date(b.checkIn).toISOString().slice(0, 10) : '',
+                                    checkOut: b.checkOut ? new Date(b.checkOut).toISOString().slice(0, 10) : '',
+                                    price: b.price,
+                                    advance: '', // Don't set advance when editing
+                                    paymentMethod: '', // Don't set payment method when editing
+                                    specialNote: b.specialNote,
+                                    guests: b.guests,
+                                    paymentDate: '' // Don't set payment date when editing
+                                  });
+                                }} 
+                                className="flex items-center gap-1 bg-yellow-400 hover:bg-yellow-500 text-black px-1.5 py-0.5 rounded text-xs font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
+                              >
+                                ✏️ Edit
+                              </button>
+                              <button
+                                className="flex items-center gap-1 bg-yellow-400 hover:bg-yellow-500 text-black px-1.5 py-0.5 rounded text-xs font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
+                                title="Record Payment"
+                                onClick={() => {
+                                  setPaymentsBooking(b);
+                                  setPaymentHistory(b.payments || []);
+                                  setShowPaymentsModal(true);
+                                  setPaymentModalError('');
+                                  setPaymentModalSuccess('');
+                                  setIsEditingPayment(null);
+                                  // Refresh bookings data to ensure we have the latest payment information
+                                  axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                                    params: { apartmentId: selectedApartment._id }
+                                  }).then(res => {
+                                    setBookings(res.data);
+                                    // Update the current booking with fresh data
+                                    const updatedBooking = res.data.find(booking => booking._id === b._id);
+                                    if (updatedBooking) {
+                                      setPaymentsBooking(updatedBooking);
+                                      setPaymentHistory(updatedBooking.payments || []);
+                                    }
+                                  }).catch(err => {
+                                    console.error('Failed to refresh bookings:', err);
+                                  });
+                                }}
+                              >
+                                💵 Payment
+                              </button>
+                              <button
+                                className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-1.5 py-0.5 rounded text-xs font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
+                                title="Delete Booking"
+                                onClick={() => {
+                                  setBookingToDelete(b);
+                                  setShowDeleteBookingModal(true);
+                                  setDeleteBookingError('');
+                                  setDeleteBookingSuccess('');
+                                }}
+                              >
+                                🗑️ Delete
+                              </button>
                             </div>
                           </div>
-                          {/* Middle: Payment Info */}
-                          <div className="flex flex-col items-start sm:items-center gap-0.5 mx-0 sm:mx-4 mt-2 sm:mt-0">
-                            <span className="flex items-center gap-1 text-xs text-gray-700"><span role="img" aria-label="Money">💰</span> <span className="font-semibold">${b.price}</span></span>
-                            <span className="flex items-center gap-1 text-xs text-gray-700">Paid: <span className="font-semibold">${getTotalPaid(b)}</span></span>
-                            <span className="flex items-center gap-1 text-xs text-gray-700">Due: <span className="font-semibold">${getDue(b)}</span></span>
-                          </div>
-                          {/* Right: Actions - horizontal, small */}
-                          <div className="flex flex-row gap-1 mt-2 sm:mt-0 sm:ml-2 items-center">
-                            {b.phone && (
-                              <button
-                                title="Contact via WhatsApp"
-                                onClick={() => {
-                                  const phone = b.phone.replace(/[^\d]/g, '');
-                                  window.open(`https://wa.me/${phone}`, '_blank');
-                                }}
-                                className="bg-green-500 hover:bg-green-600 text-white rounded-full p-1 shadow transition flex items-center justify-center text-xs"
-                                style={{ width: 28, height: 28 }}
-                              >
-                                <WhatsAppIcon />
-                              </button>
-                            )}
-                            {b.email && b.email.trim() !== '' && (
-                              <button
-                                title="Send Email"
-                                onClick={() => {
-                                  window.open(`mailto:${b.email}`, '_blank');
-                                }}
-                                className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-1 shadow transition flex items-center justify-center text-xs"
-                                style={{ width: 28, height: 28 }}
-                              >
-                                <EmailIcon />
-                              </button>
-                            )}
-                            <button title="Print" onClick={() => printBooking(b)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full p-1 shadow transition flex items-center justify-center text-xs" aria-label="Print" style={{ width: 28, height: 28 }}><span role="img" aria-label="Print">🖨️</span></button>
-                            <button title="Edit" onClick={() => {
-                              setEditingBooking(b._id);
-                              setBookingForm({
-                                clientName: b.clientName,
-                                phone: b.phone || '',
-                                email: b.email && b.email.trim() !== '' ? b.email : '',
-                                bookingDate: b.bookingDate ? new Date(b.bookingDate).toISOString().slice(0, 10) : '',
-                                checkIn: b.checkIn ? new Date(b.checkIn).toISOString().slice(0, 10) : '',
-                                checkOut: b.checkOut ? new Date(b.checkOut).toISOString().slice(0, 10) : '',
-                                price: b.price,
-                                advance: '', // Don't set advance when editing
-                                paymentMethod: '', // Don't set payment method when editing
-                                specialNote: b.specialNote,
-                                guests: b.guests,
-                                paymentDate: '' // Don't set payment date when editing
-                              });
-                            }} className="bg-blue-200 hover:bg-blue-300 text-blue-700 rounded-full p-1 shadow transition flex items-center justify-center text-xs" aria-label="Edit" style={{ width: 28, height: 28 }}><span role="img" aria-label="Edit">✏️</span></button>
-                            <button
-                              className="bg-yellow-400 hover:bg-yellow-500 text-black rounded-full p-1 shadow font-semibold transition flex items-center justify-center text-xs"
-                              title="Record Payment"
-                              onClick={() => {
-                                setPaymentsBooking(b);
-                                setPaymentHistory(b.payments || []);
-                                setShowPaymentsModal(true);
-                                setPaymentModalError('');
-                                setPaymentModalSuccess('');
-                                setIsEditingPayment(null);
-                                // Refresh bookings data to ensure we have the latest payment information
-                                axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
-                                  params: { apartmentId: selectedApartment._id }
-                                }).then(res => {
-                                  setBookings(res.data);
-                                  // Update the current booking with fresh data
-                                  const updatedBooking = res.data.find(booking => booking._id === b._id);
-                                  if (updatedBooking) {
-                                    setPaymentsBooking(updatedBooking);
-                                    setPaymentHistory(updatedBooking.payments || []);
-                                  }
-                                }).catch(err => {
-                                  console.error('Failed to refresh bookings:', err);
-                                });
-                              }}
-                              aria-label="Record Payment"
-                              style={{ width: 28, height: 28 }}
-                            >
-                              <span role="img" aria-label="Pay">💵</span>
-                            </button>
-                            <button
-                              className="bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow transition flex items-center justify-center text-xs"
-                              title="Delete Booking"
-                              onClick={() => {
-                                setBookingToDelete(b);
-                                setShowDeleteBookingModal(true);
-                                setDeleteBookingError('');
-                                setDeleteBookingSuccess('');
-                              }}
-                              aria-label="Delete"
-                              style={{ width: 28, height: 28 }}
-                            >
-                              <span role="img" aria-label="Delete">🗑️</span>
-                            </button>
-                          </div>
-                        </li>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   )}
 
                   {totalBookingPages > 1 && (
@@ -1147,121 +1366,189 @@ function Home({ setIsAuthenticated }) {
 
       {showDateModal && (
         <div className="modal-overlay">
-          <div className="modal max-w-md">
-            <div className="modal-header flex justify-between items-center">
-              <h3 className="text-xl font-bold">Bookings for {calendarDate.toLocaleDateString()}</h3>
-              <button onClick={() => setShowDateModal(false)} className="close-btn">&times;</button>
+          <div className="modal max-w-2xl">
+            <div className="modal-header flex justify-between items-center bg-black text-white rounded-t-lg">
+              <div>
+                <h3 className="text-xl font-bold">📅 Bookings for {calendarDate.toLocaleDateString()}</h3>
+                <p className="text-gray-400 text-sm">{selectedDateBookings.length} booking{selectedDateBookings.length !== 1 ? 's' : ''} found</p>
+              </div>
+              <button onClick={() => setShowDateModal(false)} className="close-btn text-white hover:text-gray-300">&times;</button>
             </div>
-            <div className="modal-content">
+            <div className="modal-content p-6">
               {selectedDateBookings.length === 0 ? (
-                <div className="empty-state text-sm py-4">No bookings for this date.</div>
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">📅</div>
+                  <h4 className="text-xl font-semibold text-black mb-2">No Bookings</h4>
+                  <p className="text-gray-500">No bookings found for this date.</p>
+                </div>
               ) : (
-                <ul className="space-y-4 pr-2">
+                <div className="space-y-6">
                   {selectedDateBookings.map((b, idx) => (
-                    <li key={b._id || idx} className="bg-white border rounded-lg shadow p-4 mb-3">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
-                        <div>
-                          <div className="font-bold text-lg text-black mb-1">{b.clientName}</div>
-                          <div className="text-xs text-gray-500 mb-1">Phone: {b.phone || 'N/A'}</div>
-                          <div className="text-xs text-gray-500 mb-1">Email: {b.email && b.email.trim() !== '' ? b.email : 'N/A'}</div>
-                                                      <div className="text-xs text-gray-500 mb-1">Booking Date: {b.bookingDate ? formatDate(b.bookingDate) : 'N/A'}</div>
+                    <div key={b._id || idx} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
+                      {/* Header */}
+                      <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className="text-xl font-bold text-black mb-1">{b.clientName}</h4>
+                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
+                                {formatDate(b.checkIn)} - {formatDate(b.checkOut)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="text-gray-400">👥</span>
+                                {b.guests} guest{b.guests !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-black">${b.price}</div>
+                            <div className={`text-sm font-semibold ${isBookingPaid(b) ? 'text-green-600' : 'text-red-600'}`}>
+                              {isBookingPaid(b) ? '✅ Paid' : '❌ Not Paid'}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex flex-col gap-1 text-xs text-gray-700">
-                                                      <div>Check In: <span className="font-semibold">{formatDate(b.checkIn)}</span></div>
-                            <div>Check Out: <span className="font-semibold">{formatDate(b.checkOut)}</span></div>
-                          <div>Guests: <span className="font-semibold">{b.guests}</span></div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-6">
+                        {/* Contact Info */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-500">📞</span>
+                              <span className="font-medium text-black">{b.phone || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-500">📧</span>
+                              <span className="font-medium text-black">{b.email && b.email.trim() !== '' ? b.email : 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-500">📅</span>
+                              <span className="font-medium text-black">Booked: {b.bookingDate ? formatDate(b.bookingDate) : 'N/A'}</span>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-500">💰</span>
+                              <span className="font-medium text-black">Paid: ${getTotalPaid(b)}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-500">💳</span>
+                              <span className="font-medium text-black">Due: ${getDue(b)}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-500">📝</span>
+                              <span className="font-medium text-black">{b.specialNote || 'No special notes'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+                          {b.phone && (
+                            <button
+                              title="Contact via WhatsApp"
+                              onClick={() => {
+                                const phone = b.phone.replace(/[^\d]/g, '');
+                                window.open(`https://wa.me/${phone}`, '_blank');
+                              }}
+                              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition-all duration-200 hover:shadow-lg"
+                            >
+                              <WhatsAppIcon />
+                              WhatsApp
+                            </button>
+                          )}
+                          {b.email && b.email.trim() !== '' && (
+                            <button
+                              title="Send Email"
+                              onClick={() => {
+                                window.open(`mailto:${b.email}`, '_blank');
+                              }}
+                              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition-all duration-200 hover:shadow-lg"
+                            >
+                              <EmailIcon />
+                              Email
+                            </button>
+                          )}
+                          <button 
+                            title="Print" 
+                            onClick={() => printBooking(b)} 
+                            className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition-all duration-200 hover:shadow-lg"
+                          >
+                            🖨️ Print
+                          </button>
+                          <button 
+                            title="Edit" 
+                            onClick={() => {
+                              setEditingBooking(b._id);
+                              setBookingForm({
+                                clientName: b.clientName,
+                                phone: b.phone || '',
+                                email: b.email && b.email.trim() !== '' ? b.email : '',
+                                bookingDate: b.bookingDate ? new Date(b.bookingDate).toISOString().slice(0, 10) : '',
+                                checkIn: b.checkIn ? new Date(b.checkIn).toISOString().slice(0, 10) : '',
+                                checkOut: b.checkOut ? new Date(b.checkOut).toISOString().slice(0, 10) : '',
+                                price: b.price,
+                                advance: '', // Don't set advance when editing
+                                paymentMethod: '', // Don't set payment method when editing
+                                specialNote: b.specialNote,
+                                guests: b.guests,
+                                paymentDate: '' // Don't set payment date when editing
+                              });
+                              setShowDateModal(false);
+                            }} 
+                            className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition-all duration-200 hover:shadow-lg"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button 
+                            title="Record Payment" 
+                            onClick={() => {
+                              setPaymentsBooking(b);
+                              setPaymentHistory(b.payments || []);
+                              setShowPaymentsModal(true);
+                              setPaymentModalError('');
+                              setPaymentModalSuccess('');
+                              setIsEditingPayment(null);
+                              setShowDateModal(false);
+                              // Refresh bookings data to ensure we have the latest payment information
+                              axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
+                                params: { apartmentId: selectedApartment._id }
+                              }).then(res => {
+                                setBookings(res.data);
+                                // Update the current booking with fresh data
+                                const updatedBooking = res.data.find(booking => booking._id === b._id);
+                                if (updatedBooking) {
+                                  setPaymentsBooking(updatedBooking);
+                                  setPaymentHistory(updatedBooking.payments || []);
+                                }
+                              }).catch(err => {
+                                console.error('Failed to refresh bookings:', err);
+                              });
+                            }} 
+                            className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition-all duration-200 hover:shadow-lg"
+                          >
+                            💵 Payment
+                          </button>
+                          <button 
+                            title="Delete Booking" 
+                            onClick={() => {
+                              setBookingToDelete(b);
+                              setShowDeleteBookingModal(true);
+                              setDeleteBookingError('');
+                              setDeleteBookingSuccess('');
+                              setShowDateModal(false);
+                            }} 
+                            className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition-all duration-200 hover:shadow-lg"
+                          >
+                            🗑️ Delete
+                          </button>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-4 text-xs text-gray-700 mb-2">
-                        <div>Price: <span className="font-semibold">${b.price}</span></div>
-                        <div>Paid: <span className="font-semibold">${getTotalPaid(b)}</span></div>
-                        <div>Due: <span className="font-semibold">${getDue(b)}</span></div>
-                      </div>
-                      <div className="mb-2 text-xs text-gray-700">Special Note: <span className="italic">{b.specialNote || 'N/A'}</span></div>
-                      <div className="flex items-center gap-2 mb-2">
-                        {isBookingPaid(b) ? (
-                          <span className="flex items-center gap-1"><span title='Paid' role='img' aria-label='Paid'>✅</span><span className="text-green-600 text-xs font-semibold">Paid</span></span>
-                        ) : (
-                          <span className="flex items-center gap-1"><span title='Not Paid' role='img' aria-label='Not Paid'>❌</span><span className="text-red-600 text-xs font-semibold">Not Paid</span></span>
-                        )}
-                      </div>
-                      <div className="flex gap-2 mt-2">
-                        {b.phone && (
-                          <button
-                            title="Contact via WhatsApp"
-                            onClick={() => {
-                              const phone = b.phone.replace(/[^\d]/g, '');
-                              window.open(`https://wa.me/${phone}`, '_blank');
-                            }}
-                            className="bg-green-500 hover:bg-green-600 text-white rounded-full p-2 text-xs font-semibold shadow transition flex items-center justify-center"
-                          >
-                            <WhatsAppIcon />
-                          </button>
-                        )}
-                        {b.email && b.email.trim() !== '' && (
-                          <button
-                            title="Send Email"
-                            onClick={() => {
-                              window.open(`mailto:${b.email}`, '_blank');
-                            }}
-                            className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 text-xs font-semibold shadow transition flex items-center justify-center"
-                          >
-                            <EmailIcon />
-                          </button>
-                        )}
-                        <button title="Print" onClick={() => printBooking(b)} className="btn btn-secondary btn-xs px-1"><span role="img" aria-label="Print">🖨️</span></button>
-                        <button title="Edit" onClick={() => {
-                          setEditingBooking(b._id);
-                          setBookingForm({
-                            clientName: b.clientName,
-                            phone: b.phone || '',
-                            email: b.email && b.email.trim() !== '' ? b.email : '',
-                            bookingDate: b.bookingDate ? new Date(b.bookingDate).toISOString().slice(0, 10) : '',
-                            checkIn: b.checkIn ? new Date(b.checkIn).toISOString().slice(0, 10) : '',
-                            checkOut: b.checkOut ? new Date(b.checkOut).toISOString().slice(0, 10) : '',
-                            price: b.price,
-                            advance: '', // Don't set advance when editing
-                            paymentMethod: '', // Don't set payment method when editing
-                            specialNote: b.specialNote,
-                            guests: b.guests,
-                            paymentDate: '' // Don't set payment date when editing
-                          });
-                          setShowDateModal(false);
-                        }} className="btn btn-secondary btn-xs px-1"><span role="img" aria-label="Edit">✏️</span></button>
-                        <button title="Record Payment" onClick={() => {
-                          setPaymentsBooking(b);
-                          setPaymentHistory(b.payments || []);
-                          setShowPaymentsModal(true);
-                          setPaymentModalError('');
-                          setPaymentModalSuccess('');
-                          setIsEditingPayment(null);
-                          setShowDateModal(false);
-                          // Refresh bookings data to ensure we have the latest payment information
-                          axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
-                            params: { apartmentId: selectedApartment._id }
-                          }).then(res => {
-                            setBookings(res.data);
-                            // Update the current booking with fresh data
-                            const updatedBooking = res.data.find(booking => booking._id === b._id);
-                            if (updatedBooking) {
-                              setPaymentsBooking(updatedBooking);
-                              setPaymentHistory(updatedBooking.payments || []);
-                            }
-                          }).catch(err => {
-                            console.error('Failed to refresh bookings:', err);
-                          });
-                        }} className="btn btn-yellow btn-xs font-semibold px-1"><span role="img" aria-label="Pay">💵</span></button>
-                        <button title="Delete Booking" onClick={() => {
-                          setBookingToDelete(b);
-                          setShowDeleteBookingModal(true);
-                          setDeleteBookingError('');
-                          setDeleteBookingSuccess('');
-                          setShowDateModal(false);
-                        }} className="btn btn-secondary btn-xs px-1"><span role="img" aria-label="Delete">🗑️</span></button>
-                      </div>
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
           </div>
