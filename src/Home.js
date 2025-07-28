@@ -82,9 +82,9 @@ function Home({ setIsAuthenticated }) {
   const [showCheckOutCalendar, setShowCheckOutCalendar] = useState(false);
 
   // Filter states for bookings
-  const [bookingStatusFilter, setBookingStatusFilter] = useState('all'); // 'all', 'paid', 'not-paid'
-  const [bookingDateFilter, setBookingDateFilter] = useState('all'); // 'all', 'upcoming', 'past', 'current'
-  const [bookingPriceFilter, setBookingPriceFilter] = useState('all'); // 'all', 'high', 'medium', 'low'
+  const [bookingStatusFilter, setBookingStatusFilter] = useState('Tutto'); // 'all', 'paid', 'not-paid'
+  const [bookingDateFilter, setBookingDateFilter] = useState('Tutto'); // 'all', 'upcoming', 'past', 'current'
+  const [bookingPriceFilter, setBookingPriceFilter] = useState('Tutto'); // 'all', 'high', 'medium', 'low'
 
   // Helper function to format date as dd-mm-yyyy
   const formatDate = (dateString) => {
@@ -201,17 +201,17 @@ function Home({ setIsAuthenticated }) {
       checkIn.setHours(0, 0, 0, 0);
       checkOut.setHours(0, 0, 0, 0);
       
-      if (bookingDateFilter === 'upcoming') return checkIn > today;
-      if (bookingDateFilter === 'past') return checkOut < today;
-      if (bookingDateFilter === 'current') return checkIn <= today && checkOut >= today;
+      if (bookingDateFilter === 'Prossimo') return checkIn > today;
+      if (bookingDateFilter === 'Passato') return checkOut < today;
+      if (bookingDateFilter === 'Attuale') return checkIn <= today && checkOut >= today;
       return true; // 'all'
     })
     .filter(b => {
       // Price filter
       const price = Number(b.price);
-      if (bookingPriceFilter === 'high') return price >= 500;
-      if (bookingPriceFilter === 'medium') return price >= 200 && price < 500;
-      if (bookingPriceFilter === 'low') return price < 200;
+      if (bookingPriceFilter === 'Alto') return price >= 500;
+      if (bookingPriceFilter === 'Medio') return price >= 200 && price < 500;
+      if (bookingPriceFilter === 'Basso') return price < 200;
       return true; // 'all'
     })
     .sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn)); // Sort by check-in date
@@ -231,18 +231,18 @@ function Home({ setIsAuthenticated }) {
     printWindow.document.write('</style>');
     printWindow.document.write('</head><body>');
     printWindow.document.write(`<h2>Booking Details</h2>`);
-    printWindow.document.write(`<div><strong>Client Name:</strong> ${booking.clientName}</div>`);
-    printWindow.document.write(`<div><strong>Phone:</strong> ${booking.phone || ''}</div>`);
+    printWindow.document.write(`<div><strong>Nome cliente:</strong> ${booking.clientName}</div>`);
+    printWindow.document.write(`<div><strong>Numero di telefono:</strong> ${booking.phone || ''}</div>`);
     printWindow.document.write(`<div><strong>Email:</strong> ${booking.email || ''}</div>`);
-    printWindow.document.write(`<div><strong>Booking Date:</strong> ${booking.bookingDate ? formatDate(booking.bookingDate) : ''}</div>`);
+    printWindow.document.write(`<div><strong>Data prenotazione:</strong> ${booking.bookingDate ? formatDate(booking.bookingDate) : ''}</div>`);
     printWindow.document.write(`<div><strong>Check In:</strong> ${formatDate(booking.checkIn)}</div>`);
     printWindow.document.write(`<div><strong>Check Out:</strong> ${formatDate(booking.checkOut)}</div>`);
     printWindow.document.write(`<div><strong>Guests:</strong> ${booking.guests}</div>`);
     printWindow.document.write(`<div><strong>Price:</strong> $${booking.price}</div>`);
     const totalPaid = booking.payments && booking.payments.length > 0 ? booking.payments.reduce((sum, p) => sum + Number(p.amount), 0) : 0;
-    printWindow.document.write(`<div><strong>Paid:</strong> $${totalPaid}</div>`);
+    printWindow.document.write(`<div><strong>Pagato:</strong> $${totalPaid}</div>`);
     printWindow.document.write(`<div><strong>Due:</strong> $${booking.paid ? 0 : (booking.price - totalPaid)}</div>`);
-    printWindow.document.write(`<div><strong>Status:</strong> ${((Math.abs(Number(totalPaid) - Number(booking.price)) < 0.01) || (Number(totalPaid) > Number(booking.price))) ? 'Paid' : 'Not Paid'}</div>`);
+    printWindow.document.write(`<div><strong>Stato:</strong> ${((Math.abs(Number(totalPaid) - Number(booking.price)) < 0.01) || (Number(totalPaid) > Number(booking.price))) ? 'Paid' : 'Non pagato'}</div>`);
     printWindow.document.write(`<div><strong>Special Note:</strong> ${booking.specialNote || 'N/A'}</div>`);
     printWindow.document.write('</body></html>');
     printWindow.document.close();
@@ -362,20 +362,20 @@ function Home({ setIsAuthenticated }) {
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div>
               <h1 className="text-4xl font-extrabold mb-2">🏢 Apartment Manager</h1>
-              <p className="text-gray-400 text-lg">Welcome Home! You are logged in.</p>
+              <p className="text-gray-400 text-lg">Bentornato a casa! Hai effettuato l’accesso.</p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowChangePasswordModal(true)}
                 className="bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-600 transition-all duration-300 transform hover:-translate-y-px shadow-md"
               >
-                Change Password
+                Cambia password
               </button>
               <button
                 onClick={handleLogout}
                 className="bg-yellow-400 text-black px-6 py-2 rounded-lg font-semibold hover:bg-yellow-500 transition-all duration-300 transform hover:-translate-y-px shadow-md"
               >
-                Logout
+                Esci
               </button>
             </div>
           </div>
@@ -388,7 +388,7 @@ function Home({ setIsAuthenticated }) {
               className="flex-1 w-full sm:w-auto border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 text-black bg-white"
             />
             <button type="submit" className="bg-black text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-all duration-300 transform hover:-translate-y-px shadow-md w-full sm:w-auto">
-              Create Apartment
+            Crea appartamento
             </button>
           </form>
           {error && <div className="message error mt-4">{error}</div>}
@@ -398,13 +398,13 @@ function Home({ setIsAuthenticated }) {
         {/* Apartment List Section */}
         <div className="card">
           <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
-            <h2 className="text-2xl font-bold text-black flex items-center gap-2">Apartment List <span className="text-base text-gray-500">({total})</span></h2>
+            <h2 className="text-2xl font-bold text-black flex items-center gap-2">Elenco appartamenti <span className="text-base text-gray-500">({total})</span></h2>
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={() => navigate('/clients')}
               >
-                View All Client History
+                Vedi tutto lo storico clienti
               </button>
               <input
                 type="text"
@@ -430,7 +430,7 @@ function Home({ setIsAuthenticated }) {
                       className="btn btn-yellow btn-sm"
                       onClick={() => { setSelectedApartment(apt); setShowModal(true); }}
                     >
-                      View Details
+                      Vedi dettagli
                     </button>
                     <button
                       className="btn btn-secondary btn-sm"
@@ -442,7 +442,7 @@ function Home({ setIsAuthenticated }) {
                         setEditApartmentSuccess('');
                       }}
                     >
-                      Edit
+                      Modifica
                     </button>
                   </div>
                 </li>
@@ -480,7 +480,7 @@ function Home({ setIsAuthenticated }) {
               {/* Apartment Title */}
               <div>
                 <h3 className="text-3xl font-bold">{selectedApartment.name}</h3>
-                <p className="text-gray-400 text-sm">Manage bookings for this apartment</p>
+                <p className="text-gray-400 text-sm">Gestisci prenotazioni per questo appartamento</p>
               </div>
 
               {/* Action Buttons (Close) */}
@@ -551,7 +551,7 @@ function Home({ setIsAuthenticated }) {
                         }, {
                           params: { id: editingBooking }
                         });
-                        setBookingSuccess('Booking updated successfully!');
+                        setBookingSuccess('Prenotazione aggiornata..');
                         setEditingBooking(null);
                       } else {
                         await axios.post('https://backend-ruby-eight-64.vercel.app/api/bookings', {
@@ -577,7 +577,7 @@ function Home({ setIsAuthenticated }) {
                   }}
                 >
                   <div className="form-group vertical">
-                    <label className="input-label">Client Name</label>
+                    <label className="input-label">Nome cliente</label>
                     <input 
                       className="input-field" 
                       value={bookingForm.clientName} 
@@ -586,13 +586,13 @@ function Home({ setIsAuthenticated }) {
                     />
                   </div>
                   <div className="form-group vertical">
-                    <label className="input-label">Phone Number</label>
+                    <label className="input-label">Numero di telefono</label>
                     <input
                       type="tel"
                       className="input-field"
                       value={bookingForm.phone}
                       onChange={e => setBookingForm(f => ({ ...f, phone: e.target.value }))}
-                      placeholder="Enter phone number"
+                      placeholder="Enter Numero di telefono"
                       pattern="[0-9+\\-() ]*"
                       maxLength={20}
                     />
@@ -608,7 +608,7 @@ function Home({ setIsAuthenticated }) {
                     />
                   </div>
                   <div className="form-group vertical">
-                    <label className="input-label">Booking Date</label>
+                    <label className="input-label">Data prenotazione</label>
                     <input 
                       type="date" 
                       className="input-field" 
@@ -778,7 +778,7 @@ function Home({ setIsAuthenticated }) {
                         className="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700 transition"
                         onClick={() => setShowRangeModal(true)}
                       >
-                        Some dates in your range are already booked! View details
+                        Some dates in your range are already booked! Vedi dettagli
                       </button>
                     </div>
                   )}
@@ -822,7 +822,7 @@ function Home({ setIsAuthenticated }) {
                                         <div className="text-xs text-gray-700">Check-in: {booking?.checkIn ? formatDate(booking.checkIn) : ''} | Check-out: {booking?.checkOut ? formatDate(booking.checkOut) : ''}</div>
                                         <div className="text-xs text-gray-700">Guests: {booking?.guests} | Price: ${booking?.price} | Advance: ${booking?.advance || 0} | Due: ${booking ? booking.price - (booking.advance || 0) : ''}</div>
                                         <div className="text-xs mt-1">
-                                          Status: <span className={booking?.paid ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>{booking?.paid ? 'Paid' : 'Not Paid'}</span>
+                                        Stato: <span className={booking?.paid ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>{booking?.paid ? 'Pagato' : 'Non pagato'}</span>
                                         </div>
                                         {booking?.specialNote && <div className="text-xs text-gray-500 italic mt-1">Note: {booking.specialNote}</div>}
                                       </div>
@@ -847,7 +847,7 @@ function Home({ setIsAuthenticated }) {
                     </div>
                   )}
                   <div className="form-group vertical">
-                    <label className="input-label">Price ($)</label>
+                    <label className="input-label">Prezzo ($)</label>
                     <input 
                       type="number" 
                       className="input-field" 
@@ -859,7 +859,7 @@ function Home({ setIsAuthenticated }) {
                   {!editingBooking && (
                     <>
                       <div className="form-group vertical">
-                        <label className="input-label">Advance Payment ($)</label>
+                        <label className="input-label">Advance Pagamento ($)</label>
                         <input 
                           type="number" 
                           className="input-field" 
@@ -869,7 +869,7 @@ function Home({ setIsAuthenticated }) {
                         />
                       </div>
                       <div className="form-group vertical">
-                        <label className="input-label">Advance Payment Date</label>
+                        <label className="input-label">Advance Pagamento Date</label>
                         <input
                           type="date"
                           className="input-field"
@@ -883,7 +883,7 @@ function Home({ setIsAuthenticated }) {
                   )}
 
                   <div className="form-group vertical">
-                    <label className="input-label">Number of Guests</label>
+                    <label className="input-label">Numero di ospiti</label>
                     <input 
                       type="number" 
                       min="1" 
@@ -904,7 +904,7 @@ function Home({ setIsAuthenticated }) {
                   </div>
                   <div className="flex gap-2 mt-2">
                     <button type="submit" className="btn btn-primary flex-1" disabled={hasBookedDates}>
-                      {editingBooking ? 'Update Booking' : 'Add Booking'}
+                      {editingBooking ? 'Update Booking' : 'Aggiungi prenotazione'}
                     </button>
       
                     {editingBooking && (
@@ -926,7 +926,7 @@ function Home({ setIsAuthenticated }) {
                           paymentDate: '' 
                         }); 
                       }}>
-                        Cancel Edit
+                        Cancel Modifica
                       </button>
                     )}
                   </div>
@@ -936,7 +936,7 @@ function Home({ setIsAuthenticated }) {
 
                 {/* Booking Calendar and List */}
                 <div className="w-full md:w-1/2"> {/* Added width class */}
-                  <label className="font-semibold block mb-2 text-black">Bookings Calendar</label>
+                  <label className="font-semibold block mb-2 text-black">Calendario prenotazioni</label>
                   <div className="calendar-container">
                     <Calendar
                       value={calendarDate}
@@ -988,9 +988,9 @@ function Home({ setIsAuthenticated }) {
                                       <div><span className="font-semibold">{hb.clientName}</span></div>
                                                                         <div>Check-in: {formatDate(hb.checkIn)}</div>
                                   <div>Check-out: {formatDate(hb.checkOut)}</div>
-                                      <div>Guests: {hb.guests}</div>
-                                      <div>Price: ${hb.price}</div>
-                                      <div>{hb.paid ? <span className="text-green-600 font-medium">Paid</span> : <span className="text-red-600 font-medium">Not Paid</span>}</div>
+                                      <div>Ospiti: {hb.guests}</div>
+                                      <div>Prezzo: ${hb.price}</div>
+                                      <div>{hb.paid ? <span className="text-green-600 font-medium">Pagato</span> : <span className="text-red-600 font-medium">Non pagato</span>}</div>
                                       <div className="text-gray-500 text-xs">{hb.specialNote || 'No special note.'}</div>
                                     </div>
                                   ))}
@@ -1027,17 +1027,17 @@ function Home({ setIsAuthenticated }) {
                   <div className="space-y-2 mb-3">
                     {/* Status Filter */}
                     <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-gray-700">📊 Status</label>
+                      <label className="block text-xs font-semibold text-gray-700">📊 Stato</label>
                       <div className="flex flex-wrap gap-1">
                         <button
-                          onClick={() => { setBookingStatusFilter('all'); setBookingPage(1); }}
+                          onClick={() => { setBookingStatusFilter('Tutto'); setBookingPage(1); }}
                           className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
-                            bookingStatusFilter === 'all' 
+                            bookingStatusFilter === 'Tutto' 
                               ? 'bg-black text-white shadow-sm' 
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                           }`}
                         >
-                          📋 All
+                          📋 Tutto
                         </button>
                         <button
                           onClick={() => { setBookingStatusFilter('paid'); setBookingPage(1); }}
@@ -1047,7 +1047,7 @@ function Home({ setIsAuthenticated }) {
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                           }`}
                         >
-                          ✅ Paid
+                          ✅ Pagato
                         </button>
                         <button
                           onClick={() => { setBookingStatusFilter('not-paid'); setBookingPage(1); }}
@@ -1057,7 +1057,7 @@ function Home({ setIsAuthenticated }) {
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                           }`}
                         >
-                          ❌ Not Paid
+                          ❌ Non pagato
                         </button>
                       </div>
                     </div>
@@ -1067,44 +1067,44 @@ function Home({ setIsAuthenticated }) {
                       <label className="block text-xs font-semibold text-gray-700">📅 Date</label>
                       <div className="flex flex-wrap gap-1">
                         <button
-                          onClick={() => { setBookingDateFilter('all'); setBookingPage(1); }}
+                          onClick={() => { setBookingDateFilter('Tutto'); setBookingPage(1); }}
                           className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
-                            bookingDateFilter === 'all' 
+                            bookingDateFilter === 'Tutto' 
                               ? 'bg-black text-white shadow-sm' 
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                           }`}
                         >
-                          📋 All
+                          📋 Tutto
                         </button>
                         <button
-                          onClick={() => { setBookingDateFilter('upcoming'); setBookingPage(1); }}
+                          onClick={() => { setBookingDateFilter('Prossimo'); setBookingPage(1); }}
                           className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
-                            bookingDateFilter === 'upcoming' 
+                            bookingDateFilter === 'Prossimo' 
                               ? 'bg-blue-600 text-white shadow-sm' 
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                           }`}
                         >
-                          🔮 Upcoming
+                          🔮 Prossimo
                         </button>
                         <button
-                          onClick={() => { setBookingDateFilter('current'); setBookingPage(1); }}
+                          onClick={() => { setBookingDateFilter('Attuale'); setBookingPage(1); }}
                           className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
-                            bookingDateFilter === 'current' 
+                            bookingDateFilter === 'Attuale' 
                               ? 'bg-yellow-400 text-black shadow-sm' 
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                           }`}
                         >
-                          📅 Current
+                          📅 Attuale
                         </button>
                         <button
-                          onClick={() => { setBookingDateFilter('past'); setBookingPage(1); }}
+                          onClick={() => { setBookingDateFilter('Passato'); setBookingPage(1); }}
                           className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
-                            bookingDateFilter === 'past' 
+                            bookingDateFilter === 'Passato' 
                               ? 'bg-gray-600 text-white shadow-sm' 
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                           }`}
                         >
-                          📚 Past
+                          📚 Passato
                         </button>
                       </div>
                     </div>
@@ -1114,14 +1114,14 @@ function Home({ setIsAuthenticated }) {
                       <label className="block text-xs font-semibold text-gray-700">💰 Price</label>
                       <div className="flex flex-wrap gap-1">
                         <button
-                          onClick={() => { setBookingPriceFilter('all'); setBookingPage(1); }}
+                          onClick={() => { setBookingPriceFilter('Tutto'); setBookingPage(1); }}
                           className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
-                            bookingPriceFilter === 'all' 
+                            bookingPriceFilter === 'Tutto' 
                               ? 'bg-black text-white shadow-sm' 
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                           }`}
                         >
-                          📋 All
+                          📋 Tutto
                         </button>
                         <button
                           onClick={() => { setBookingPriceFilter('high'); setBookingPage(1); }}
@@ -1131,27 +1131,27 @@ function Home({ setIsAuthenticated }) {
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                           }`}
                         >
-                          💰 High
+                          💰 Basso
                         </button>
                         <button
-                          onClick={() => { setBookingPriceFilter('medium'); setBookingPage(1); }}
+                          onClick={() => { setBookingPriceFilter('Medio'); setBookingPage(1); }}
                           className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
-                            bookingPriceFilter === 'medium' 
+                            bookingPriceFilter === 'Medio' 
                               ? 'bg-orange-500 text-white shadow-sm' 
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                           }`}
                         >
-                          💵 Medium
+                          💵 Medio
                         </button>
                         <button
-                          onClick={() => { setBookingPriceFilter('low'); setBookingPage(1); }}
+                          onClick={() => { setBookingPriceFilter('Basso'); setBookingPage(1); }}
                           className={`px-2 py-1 text-xs rounded-md font-medium transition-all duration-200 ${
-                            bookingPriceFilter === 'low' 
+                            bookingPriceFilter === 'Basso' 
                               ? 'bg-green-600 text-white shadow-sm' 
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                           }`}
                         >
-                          💸 Low
+                          💸 Basso
                         </button>
                       </div>
                     </div>
@@ -1160,7 +1160,7 @@ function Home({ setIsAuthenticated }) {
                   {paginatedBookings.length === 0 ? (
                     <div className="text-center py-4">
                       <div className="text-2xl mb-1">📋</div>
-                      <h4 className="text-sm font-semibold text-black mb-1">No Bookings Found</h4>
+                      <h4 className="text-sm font-semibold text-black mb-1">Nessuna prenotazione trovata</h4>
                       <p className="text-gray-500 text-xs">Try adjusting your search criteria.</p>
                     </div>
                   ) : (
@@ -1186,7 +1186,7 @@ function Home({ setIsAuthenticated }) {
                               <div className="text-right">
                                 <div className="text-base font-bold text-black">${b.price}</div>
                                 <div className={`text-xs font-semibold ${isBookingPaid(b) ? 'text-green-600' : 'text-red-600'}`}>
-                                  {isBookingPaid(b) ? '✅ Paid' : '❌ Not Paid'}
+                                  {isBookingPaid(b) ? '✅ Pagato' : '❌ Non pagato'}
                                 </div>
                               </div>
                             </div>
@@ -1207,13 +1207,13 @@ function Home({ setIsAuthenticated }) {
                                 </div>
                                 <div className="flex items-center gap-1 text-xs">
                                   <span className="text-gray-500">📅</span>
-                                  <span className="font-medium text-black">Booked: {b.bookingDate ? formatDate(b.bookingDate) : 'N/A'}</span>
+                                  <span className="font-medium text-black">Prenotato: {b.bookingDate ? formatDate(b.bookingDate) : 'N/A'}</span>
                                 </div>
                               </div>
                               <div className="space-y-0.5">
                                 <div className="flex items-center gap-1 text-xs">
                                   <span className="text-gray-500">💰</span>
-                                  <span className="font-medium text-black">Paid: ${getTotalPaid(b)}</span>
+                                  <span className="font-medium text-black">Pagato: ${getTotalPaid(b)}</span>
                                 </div>
                                 <div className="flex items-center gap-1 text-xs">
                                   <span className="text-gray-500">💳</span>
@@ -1281,7 +1281,7 @@ function Home({ setIsAuthenticated }) {
                                 }} 
                                 className="flex items-center gap-1 bg-yellow-400 hover:bg-yellow-500 text-black px-1.5 py-0.5 rounded text-xs font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
                               >
-                                ✏️ Edit
+                                ✏️ Modifica
                               </button>
                               <button
                                 className="flex items-center gap-1 bg-yellow-400 hover:bg-yellow-500 text-black px-1.5 py-0.5 rounded text-xs font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
@@ -1309,7 +1309,7 @@ function Home({ setIsAuthenticated }) {
                                   });
                                 }}
                               >
-                                💵 Payment
+                                💵 Pagamento
                               </button>
                               <button
                                 className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-1.5 py-0.5 rounded text-xs font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
@@ -1321,7 +1321,7 @@ function Home({ setIsAuthenticated }) {
                                   setDeleteBookingSuccess('');
                                 }}
                               >
-                                🗑️ Delete
+                                🗑️ Elimina
                               </button>
                             </div>
                           </div>
@@ -1371,7 +1371,7 @@ function Home({ setIsAuthenticated }) {
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">📅</div>
                   <h4 className="text-xl font-semibold text-black mb-2">No Bookings</h4>
-                  <p className="text-gray-500">No bookings found for this date.</p>
+                  <p className="text-gray-500">Nessuna prenotazione trovata for this date.</p>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -1396,7 +1396,7 @@ function Home({ setIsAuthenticated }) {
                           <div className="text-right">
                             <div className="text-2xl font-bold text-black">${b.price}</div>
                             <div className={`text-sm font-semibold ${isBookingPaid(b) ? 'text-green-600' : 'text-red-600'}`}>
-                              {isBookingPaid(b) ? '✅ Paid' : '❌ Not Paid'}
+                              {isBookingPaid(b) ? '✅ Pagato' : '❌ Non pagato'}
                             </div>
                           </div>
                         </div>
@@ -1417,13 +1417,13 @@ function Home({ setIsAuthenticated }) {
                             </div>
                             <div className="flex items-center gap-2 text-sm">
                               <span className="text-gray-500">📅</span>
-                              <span className="font-medium text-black">Booked: {b.bookingDate ? formatDate(b.bookingDate) : 'N/A'}</span>
+                              <span className="font-medium text-black">Prenotato: {b.bookingDate ? formatDate(b.bookingDate) : 'N/A'}</span>
                             </div>
                           </div>
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-sm">
                               <span className="text-gray-500">💰</span>
-                              <span className="font-medium text-black">Paid: ${getTotalPaid(b)}</span>
+                              <span className="font-medium text-black">Pagato: ${getTotalPaid(b)}</span>
                             </div>
                             <div className="flex items-center gap-2 text-sm">
                               <span className="text-gray-500">💳</span>
@@ -1492,7 +1492,7 @@ function Home({ setIsAuthenticated }) {
                             }} 
                             className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition-all duration-200 hover:shadow-lg"
                           >
-                            ✏️ Edit
+                            ✏️ Modifica
                           </button>
                           <button 
                             title="Record Payment" 
@@ -1521,7 +1521,7 @@ function Home({ setIsAuthenticated }) {
                             }} 
                             className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition-all duration-200 hover:shadow-lg"
                           >
-                            💵 Payment
+                            💵 Pagamento
                           </button>
                           <button 
                             title="Delete Booking" 
@@ -1534,7 +1534,7 @@ function Home({ setIsAuthenticated }) {
                             }} 
                             className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition-all duration-200 hover:shadow-lg"
                           >
-                            🗑️ Delete
+                            🗑️ Elimina
                           </button>
                         </div>
                       </div>
@@ -1556,13 +1556,13 @@ function Home({ setIsAuthenticated }) {
         <div className="modal-overlay">
           <div className="modal max-w-md">
             <div className="modal-header flex justify-between items-center">
-              <h3 className="text-xl font-bold">Record Payment</h3>
+              <h3 className="text-xl font-bold">Record Pagamento</h3>
               <button onClick={() => setShowPaymentModal(false)} className="close-btn">&times;</button>
             </div>
             <div className="modal-content">
                               <div className="mb-2 text-gray-700">Booking for <span className="font-semibold">{paymentBooking.clientName}</span> ({formatDate(paymentBooking.checkIn)} to {formatDate(paymentBooking.checkOut)})</div>
-              <div className="mb-2 text-sm">Total Price: <span className="font-semibold">${paymentBooking.price}</span></div>
-              <div className="mb-2 text-sm">Already Paid: <span className="font-semibold">${paymentBooking.advance || 0}</span></div>
+              <div className="mb-2 text-sm">Prezzo totale: <span className="font-semibold">${paymentBooking.price}</span></div>
+              <div className="mb-2 text-sm">Already Pagato: <span className="font-semibold">${paymentBooking.advance || 0}</span></div>
               <div className="mb-2 text-sm">Due: <span className="font-semibold">${paymentBooking.price - (paymentBooking.advance || 0)}</span></div>
               <form onSubmit={async (e) => {
                 e.preventDefault();
@@ -1575,7 +1575,7 @@ function Home({ setIsAuthenticated }) {
                 }
                 const newAdvance = (Number(paymentBooking.advance) || 0) + pay;
                 if (newAdvance > paymentBooking.price) {
-                  setPaymentError('Total paid cannot exceed total price.');
+                  setPaymentError('Totale pagato cannot exceed Prezzo totale.');
                   return;
                 }
                 try {
@@ -1623,31 +1623,31 @@ function Home({ setIsAuthenticated }) {
         <div className="modal-overlay z-50">
           <div className="modal max-w-lg">
             <div className="modal-header flex justify-between items-center">
-              <h3 className="text-xl font-bold">Payments for {paymentsBooking.clientName}</h3>
+              <h3 className="text-xl font-bold">Pagamento for {paymentsBooking.clientName}</h3>
               <button onClick={() => setShowPaymentsModal(false)} className="close-btn">&times;</button>
             </div>
             <div className="modal-content">
               {/* Summary */}
               <div className="mb-4 p-2 bg-gray-50 rounded flex flex-wrap gap-4 text-sm">
-                <div>Total Price: <span className="font-semibold">${paymentsBooking.price}</span></div>
-                <div>Total Paid: <span className="font-semibold">${(displayPayments.reduce((sum, p) => sum + Number(p.amount), 0)).toFixed(2)}</span></div>
-                <div>Balance Due: <span className="font-semibold">${(paymentsBooking.price - displayPayments.reduce((sum, p) => sum + Number(p.amount), 0)).toFixed(2)}</span></div>
-                <div>Status: {displayPayments.reduce((sum, p) => sum + Number(p.amount), 0) >= paymentsBooking.price ? <span className="text-green-600 font-semibold">Paid</span> : <span className="text-red-600 font-semibold">Not Paid</span>}</div>
+                <div>Prezzo totale: <span className="font-semibold">${paymentsBooking.price}</span></div>
+                <div>Totale pagato: <span className="font-semibold">${(displayPayments.reduce((sum, p) => sum + Number(p.amount), 0)).toFixed(2)}</span></div>
+                <div>Saldo dovuto: <span className="font-semibold">${(paymentsBooking.price - displayPayments.reduce((sum, p) => sum + Number(p.amount), 0)).toFixed(2)}</span></div>
+                <div>Stato: {displayPayments.reduce((sum, p) => sum + Number(p.amount), 0) >= paymentsBooking.price ? <span className="text-green-600 font-semibold">Pagato</span> : <span className="text-red-600 font-semibold">Non pagato</span>}</div>
               </div>
               {/* Payment History Table */}
               <div className="mb-4">
-                <div className="font-semibold mb-2">Payment History</div>
+                <div className="font-semibold mb-2">Pagamento History</div>
                 {displayPayments.length === 0 ? (
-                  <div className="text-xs text-gray-500">No payments yet.</div>
+                  <div className="text-xs text-gray-500">No Pagamento yet.</div>
                 ) : (
                   <table className="w-full text-xs border">
                     <thead>
                       <tr className="bg-gray-100">
                         <th className="p-1 border">Date</th>
-                        <th className="p-1 border">Amount</th>
-                        <th className="p-1 border">Method</th>
+                        <th className="p-1 border">Importo</th>
+                        <th className="p-1 border">Metodo</th>
                         <th className="p-1 border">Note</th>
-                        <th className="p-1 border">Actions</th>
+                        <th className="p-1 border">Azioni</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1662,7 +1662,7 @@ function Home({ setIsAuthenticated }) {
                               <button className="text-blue-600 mr-1" onClick={() => {
                                 setIsEditingPayment(p._id || idx);
                                 setNewPayment({ date: p.date ? formatDate(p.date) : '', amount: p.amount, method: p.method, note: p.note });
-                              }}>Edit</button>
+                              }}>Modifica</button>
                             )}
                           </td>
                         </tr>
@@ -1673,7 +1673,7 @@ function Home({ setIsAuthenticated }) {
               </div>
               {/* Add/Edit Payment Form */}
               <div className="mb-2">
-                <div className="font-semibold mb-1">{isEditingPayment ? 'Edit Payment' : 'Add Payment'}</div>
+                <div className="font-semibold mb-1">{isEditingPayment ? 'Modifica pagamento' : 'Aggiungi pagamento'}</div>
                 <form onSubmit={async (e) => {
                   e.preventDefault();
                   setPaymentModalError('');
@@ -1743,7 +1743,7 @@ function Home({ setIsAuthenticated }) {
                           // Optionally log error, but don't block UI
                           console.error('Failed to update paid status:', err.response?.data?.message || err.message);
                         }
-                        setPaymentModalSuccess('Payment added!');
+                        setPaymentModalSuccess('Pagamento added!');
                         setNewPayment({ date: '', amount: '', method: '', note: '' });
                         // Refresh bookings data to update the modal in real-time
                         try {
@@ -1755,18 +1755,18 @@ function Home({ setIsAuthenticated }) {
                           console.error('Failed to refresh bookings:', err);
                         }
                       } catch (err) {
-                        setPaymentModalError(err.response?.data?.message || 'Failed to add payment');
+                        setPaymentModalError(err.response?.data?.message || 'Failed to add Pagamento');
                       }
                     }
                   } catch (err) {
-                    setPaymentModalError(err.message || 'Error saving payment');
+                    setPaymentModalError(err.message || 'Error saving Pagamento');
                   }
                 }} className="flex flex-wrap gap-2 items-end">
                   <input type="date" className="input-field" value={newPayment.date} onChange={e => setNewPayment(f => ({ ...f, date: e.target.value }))} required />
-                  <input type="number" className="input-field" placeholder="Amount" value={newPayment.amount} onChange={e => setNewPayment(f => ({ ...f, amount: e.target.value }))} required min="1" />
-                  <input className="input-field" placeholder="Method" value={newPayment.method} onChange={e => setNewPayment(f => ({ ...f, method: e.target.value }))} required />
+                  <input type="number" className="input-field" placeholder="Importo" value={newPayment.amount} onChange={e => setNewPayment(f => ({ ...f, amount: e.target.value }))} required min="1" />
+                  <input className="input-field" placeholder="Metodo" value={newPayment.method} onChange={e => setNewPayment(f => ({ ...f, method: e.target.value }))} required />
                   <input className="input-field" placeholder="Note" value={newPayment.note} onChange={e => setNewPayment(f => ({ ...f, note: e.target.value }))} />
-                  <button type="submit" className="btn btn-primary btn-xs">{isEditingPayment ? 'Update' : 'Add'}</button>
+                  <button type="submit" className="btn btn-primary btn-xs">{isEditingPayment ? 'Update' : 'Aggiungi'}</button>
                   {isEditingPayment && (
                     <button type="button" className="btn btn-secondary btn-xs" onClick={() => { setIsEditingPayment(null); setNewPayment({ date: '', amount: '', method: '', note: '' }); }}>Cancel</button>
                   )}
@@ -1784,7 +1784,7 @@ function Home({ setIsAuthenticated }) {
         <div className="modal-overlay">
           <div className="modal max-w-md">
             <div className="modal-header">
-              <h3 className="text-xl font-bold">Change Password</h3>
+              <h3 className="text-xl font-bold">Cambia password</h3>
               <button onClick={() => setShowChangePasswordModal(false)} className="close-btn">
                 &times;
               </button>
@@ -1901,7 +1901,7 @@ function Home({ setIsAuthenticated }) {
                 </div>
                 <div className="flex gap-2 mt-4">
                   <button type="submit" className="btn btn-primary flex-1">
-                    Change Password
+                  Cambia password
                   </button>
                   <button 
                     type="button" 
@@ -1938,7 +1938,7 @@ function Home({ setIsAuthenticated }) {
         <div className="modal-overlay">
           <div className="modal max-w-md">
             <div className="modal-header">
-              <h3 className="text-xl font-bold">Edit Apartment</h3>
+              <h3 className="text-xl font-bold">Modifica Apartment</h3>
               <button onClick={() => setShowEditApartmentModal(false)} className="close-btn">
                 &times;
               </button>
@@ -2020,7 +2020,7 @@ function Home({ setIsAuthenticated }) {
         <div className="modal-overlay">
           <div className="modal max-w-md">
             <div className="modal-header">
-              <h3 className="text-xl font-bold text-red-600">Delete Booking</h3>
+              <h3 className="text-xl font-bold text-red-600">Elimina Booking</h3>
               <button onClick={() => setShowDeleteBookingModal(false)} className="close-btn">
                 &times;
               </button>
@@ -2034,7 +2034,7 @@ function Home({ setIsAuthenticated }) {
                     Check-in: {formatDate(bookingToDelete.checkIn)} | Check-out: {formatDate(bookingToDelete.checkOut)}
                   </div>
                   <div className="text-sm text-gray-600">
-                    Guests: {bookingToDelete.guests} | Price: ${bookingToDelete.price}
+                  Ospiti: {bookingToDelete.guests} | Price: ${bookingToDelete.price}
                   </div>
                 </div>
                 <p className="text-red-600 text-sm mt-2 font-semibold">This action cannot be undone!</p>
@@ -2068,7 +2068,7 @@ function Home({ setIsAuthenticated }) {
                     }
                   }}
                 >
-                  Delete Booking
+                  Elimina Booking
                 </button>
                 <button
                   className="btn btn-secondary flex-1"
