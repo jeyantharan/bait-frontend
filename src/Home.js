@@ -798,6 +798,14 @@ function Home({ setIsAuthenticated }) {
                                 if (editingBooking && b._id === editingBooking) {
                                   return false;
                                 }
+                                // Check if checkout date has passed
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const checkOutDate = new Date(b.checkOut);
+                                checkOutDate.setHours(0, 0, 0, 0);
+                                if (checkOutDate < today) {
+                                  return false; // Hide bookings with passed checkout date
+                                }
                                 const checkIn = new Date(b.checkIn);
                                 const checkOut = new Date(b.checkOut);
                                 checkIn.setHours(0,0,0,0);
@@ -874,6 +882,14 @@ function Home({ setIsAuthenticated }) {
                               const foundBookings = bookings.filter(b => {
                                 if (editingBooking && b._id === editingBooking) {
                                   return false;
+                                }
+                                // Check if checkout date has passed
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const checkOutDate = new Date(b.checkOut);
+                                checkOutDate.setHours(0, 0, 0, 0);
+                                if (checkOutDate < today) {
+                                  return false; // Hide bookings with passed checkout date
                                 }
                                 const checkIn = new Date(b.checkIn);
                                 const checkOut = new Date(b.checkOut);
@@ -1085,6 +1101,14 @@ function Home({ setIsAuthenticated }) {
                           if (editingBooking && b._id === editingBooking) {
                             return false;
                           }
+                          // Check if checkout date has passed
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const checkOutDate = new Date(b.checkOut);
+                          checkOutDate.setHours(0, 0, 0, 0);
+                          if (checkOutDate < today) {
+                            return false; // Hide bookings with passed checkout date
+                          }
                           const checkIn = new Date(b.checkIn);
                           const checkOut = new Date(b.checkOut);
                           checkIn.setHours(0,0,0,0);
@@ -1100,6 +1124,14 @@ function Home({ setIsAuthenticated }) {
                             // Skip the current booking being edited
                             if (editingBooking && b._id === editingBooking) {
                               return false;
+                            }
+                            // Check if checkout date has passed
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const checkOutDate = new Date(b.checkOut);
+                            checkOutDate.setHours(0, 0, 0, 0);
+                            if (checkOutDate < today) {
+                              return false; // Hide bookings with passed checkout date
                             }
                             const checkIn = new Date(b.checkIn);
                             const checkOut = new Date(b.checkOut);
@@ -1300,7 +1332,20 @@ function Home({ setIsAuthenticated }) {
                     </div>
                   ) : (
                     <div className="space-y-2 mt-2">
-                      {paginatedBookings.map(b => (
+                      {paginatedBookings.map(b => {
+                        // Check if checkout date has passed
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const checkOutDate = new Date(b.checkOut);
+                        checkOutDate.setHours(0, 0, 0, 0);
+                        const isCheckOutPassed = checkOutDate < today;
+                        
+                        // Hide the card if checkout date has passed
+                        if (isCheckOutPassed) {
+                          return null;
+                        }
+                        
+                        return (
                         <div key={b._id} className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group">
                           {/* Header */}
                           <div className="bg-gray-50 px-2.5 py-1.5 border-b border-gray-200">
@@ -1461,7 +1506,8 @@ function Home({ setIsAuthenticated }) {
                             </div>
                           </div>
                         </div>
-                      ))}
+                      );
+                      })}
                     </div>
                   )}
 
@@ -1510,7 +1556,20 @@ function Home({ setIsAuthenticated }) {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {selectedDateBookings.map((b, idx) => (
+                  {selectedDateBookings.map((b, idx) => {
+                    // Check if checkout date has passed
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const checkOutDate = new Date(b.checkOut);
+                    checkOutDate.setHours(0, 0, 0, 0);
+                    const isCheckOutPassed = checkOutDate < today;
+                    
+                    // Hide the card if checkout date has passed
+                    if (isCheckOutPassed) {
+                      return null;
+                    }
+                    
+                    return (
                     <div key={b._id || idx} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
                       {/* Header */}
                       <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
@@ -1674,7 +1733,8 @@ function Home({ setIsAuthenticated }) {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               )}
             </div>
