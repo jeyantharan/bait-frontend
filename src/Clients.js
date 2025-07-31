@@ -21,6 +21,20 @@ function Clients() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
+  // Payment management state variables
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentBooking, setPaymentBooking] = useState(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentError, setPaymentError] = useState('');
+  const [paymentSuccess, setPaymentSuccess] = useState('');
+  const [showPaymentsModal, setShowPaymentsModal] = useState(false);
+  const [paymentsBooking, setPaymentsBooking] = useState(null);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [newPayment, setNewPayment] = useState({ date: '', amount: '', method: '', note: '' });
+  const [paymentModalError, setPaymentModalError] = useState('');
+  const [paymentModalSuccess, setPaymentModalSuccess] = useState('');
+  const [isEditingPayment, setIsEditingPayment] = useState(null);
+
   const fetchGroups = async (searchTerm = '', phoneSearchTerm = '') => {
     setLoading(true);
     try {
@@ -295,11 +309,174 @@ function Clients() {
                           Price: <span className="font-semibold">€{b.price}</span> | Paid: <span className="font-semibold">€{getTotalPaid(b)}</span> | Mancano: <span className="font-semibold">€{getDue(b)}</span> | Stato: <span className={isBookingPaid(b) ? 'status-paid' : 'status-unpaid'}>{isBookingPaid(b) ? 'Pagato' : 'Non pagato'}</span>
                         </div>
                         <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            className="flex items-center gap-1 bg-yellow-400 hover:bg-yellow-500 text-black px-2 py-1 rounded text-xs font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
+                            title="Record Payment"
+                            onClick={() => {
+                              setPaymentsBooking(b);
+                              setPaymentHistory(b.payments || []);
+                              setShowPaymentsModal(true);
+                              setPaymentModalError('');
+                              setPaymentModalSuccess('');
+                              setIsEditingPayment(null);
+                            }}
+                          >
+                            💵 Pagamento
+                          </button>
+                        </div>
                       </div>
                     </li>
                   ))
                 )}
               </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Management Modal */}
+      {showPaymentsModal && paymentsBooking && (
+        <div className="modal-overlay z-50">
+          <div className="modal max-w-lg">
+            <div className="modal-header flex justify-between items-center">
+              <h3 className="text-xl font-bold">Pagamento for {paymentsBooking.clientName}</h3>
+              <button onClick={() => setShowPaymentsModal(false)} className="close-btn">&times;</button>
+            </div>
+            <div className="modal-content">
+              {/* Summary */}
+              <div className="mb-4 p-2 bg-gray-50 rounded flex flex-wrap gap-4 text-sm">
+                <div>Prezzo totale: <span className="font-semibold">€{paymentsBooking.price}</span></div>
+                <div>Totale pagato: <span className="font-semibold">€{(paymentHistory.reduce((sum, p) => sum + Number(p.amount), 0)).toFixed(2)}</span></div>
+                <div>Saldo dovuto: <span className="font-semibold">€{(paymentsBooking.price - paymentHistory.reduce((sum, p) => sum + Number(p.amount), 0)).toFixed(2)}</span></div>
+                <div>Stato: {paymentHistory.reduce((sum, p) => sum + Number(p.amount), 0) >= paymentsBooking.price ? <span className="text-green-600 font-semibold">Pagato</span> : <span className="text-red-600 font-semibold">Non pagato</span>}</div>
+              </div>
+              {/* Payment History Table */}
+              <div className="mb-4">
+                <div className="font-semibold mb-2">Pagamento History</div>
+                {paymentHistory.length === 0 ? (
+                  <div className="text-xs text-gray-500">No Pagamento yet.</div>
+                ) : (
+                  <table className="w-full text-xs border">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="p-1 border">Date</th>
+                        <th className="p-1 border">Importo</th>
+                        <th className="p-1 border">Metodo</th>
+                        <th className="p-1 border">Note</th>
+                        <th className="p-1 border">Azioni</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paymentHistory.map((p, idx) => (
+                        <tr key={p._id || idx}>
+                          <td className="p-1 border">{p.date ? new Date(p.date).toLocaleDateString() : ''}</td>
+                          <td className="p-1 border">€{p.amount}</td>
+                          <td className="p-1 border">{p.method}</td>
+                          <td className="p-1 border">{p.note}</td>
+                          <td className="p-1 border">
+                            {paymentHistory.length > 0 && (
+                              <button className="text-blue-600 mr-1" onClick={() => {
+                                setIsEditingPayment(p._id || idx);
+                                setNewPayment({ date: p.date ? formatDate(p.date) : '', amount: p.amount, method: p.method, note: p.note });
+                              }}>Modifica</button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+              {/* Add/Edit Payment Form */}
+              <div className="mb-2">
+                <div className="font-semibold mb-1">{isEditingPayment ? 'Modifica pagamento' : 'Aggiungi pagamento'}</div>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  setPaymentModalError('');
+                  setPaymentModalSuccess('');
+                  if (!newPayment.date || !newPayment.amount || !newPayment.method) {
+                    setPaymentModalError('Date, amount, and method are required.');
+                    return;
+                  }
+                  try {
+                    if (isEditingPayment) {
+                      // Edit payment
+                      try {
+                        const res = await axios.put('https://backend-ruby-eight-64.vercel.app/api/bookings/payments', {
+                          bookingId: paymentsBooking._id,
+                          paymentId: isEditingPayment,
+                          payment: newPayment
+                        });
+                        const updated = res.data;
+                        setPaymentHistory(updated.payments || []);
+                        setPaymentsBooking(updated);
+                        // After updating payments, update paid status in DB
+                        const totalPaid = (updated.payments || []).reduce((sum, p) => sum + Number(p.amount), 0);
+                        const isPaid = Math.abs(Number(totalPaid) - Number(updated.price)) < 0.01 || Number(totalPaid) > Number(updated.price);
+                        try {
+                          await axios.put('https://backend-ruby-eight-64.vercel.app/api/bookings/paid', {
+                            bookingId: updated._id,
+                            paid: isPaid
+                          });
+                        } catch (err) {
+                          // Optionally log error, but don't block UI
+                          console.error('Failed to update paid status:', err.response?.data?.message || err.message);
+                        }
+                        setPaymentModalSuccess('Payment updated!');
+                        setIsEditingPayment(null);
+                        setNewPayment({ date: '', amount: '', method: '', note: '' });
+                        // Refresh client data
+                        fetchGroups(search, phoneSearch);
+                      } catch (err) {
+                        setPaymentModalError(err.response?.data?.message || 'Failed to update payment');
+                      }
+                    } else {
+                      // Add payment
+                      try {
+                        const res = await axios.post('https://backend-ruby-eight-64.vercel.app/api/bookings/payments', {
+                          bookingId: paymentsBooking._id,
+                          payment: newPayment
+                        });
+                        const updated = res.data;
+                        setPaymentHistory(updated.payments || []);
+                        setPaymentsBooking(updated);
+                        // After updating payments, update paid status in DB
+                        const totalPaid = (updated.payments || []).reduce((sum, p) => sum + Number(p.amount), 0);
+                        const isPaid = Math.abs(Number(totalPaid) - Number(updated.price)) < 0.01 || Number(totalPaid) > Number(updated.price);
+                        try {
+                          await axios.put('https://backend-ruby-eight-64.vercel.app/api/bookings/paid', {
+                            bookingId: updated._id,
+                            paid: isPaid
+                          });
+                        } catch (err) {
+                          // Optionally log error, but don't block UI
+                          console.error('Failed to update paid status:', err.response?.data?.message || err.message);
+                        }
+                        setPaymentModalSuccess('Pagamento added!');
+                        setNewPayment({ date: '', amount: '', method: '', note: '' });
+                        // Refresh client data
+                        fetchGroups(search, phoneSearch);
+                      } catch (err) {
+                        setPaymentModalError(err.response?.data?.message || 'Failed to add Pagamento');
+                      }
+                    }
+                  } catch (err) {
+                    setPaymentModalError(err.message || 'Error saving Pagamento');
+                  }
+                }} className="flex flex-wrap gap-2 items-end">
+                  <input type="date" className="input-field" value={newPayment.date} onChange={e => setNewPayment(f => ({ ...f, date: e.target.value }))} required />
+                  <input type="number" className="input-field" placeholder="Importo" value={newPayment.amount} onChange={e => setNewPayment(f => ({ ...f, amount: e.target.value }))} required min="1" />
+                  <input className="input-field" placeholder="Metodo" value={newPayment.method} onChange={e => setNewPayment(f => ({ ...f, method: e.target.value }))} required />
+                  <input className="input-field" placeholder="Note" value={newPayment.note} onChange={e => setNewPayment(f => ({ ...f, note: e.target.value }))} />
+                  <button type="submit" className="btn btn-primary btn-xs">{isEditingPayment ? 'Update' : 'Aggiungi'}</button>
+                  {isEditingPayment && (
+                    <button type="button" className="btn btn-secondary btn-xs" onClick={() => { setIsEditingPayment(null); setNewPayment({ date: '', amount: '', method: '', note: '' }); }}>Cancel</button>
+                  )}
+                </form>
+                {paymentModalError && <div className="message error mt-1">{paymentModalError}</div>}
+                {paymentModalSuccess && <div className="message success mt-1">{paymentModalSuccess}</div>}
+              </div>
             </div>
           </div>
         </div>
