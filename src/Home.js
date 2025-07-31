@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css'; // Keep default calendar styles for base, then override
+import * as XLSX from 'xlsx';
 
 function Home({ setIsAuthenticated }) {
   const navigate = useNavigate();
@@ -354,6 +355,133 @@ function Home({ setIsAuthenticated }) {
     ? paymentHistory
     : [];
 
+  // Excel export functionality
+  const exportToExcel = async () => {
+    try {
+      const response = await axios.get('https://backend-ruby-eight-64.vercel.app/api/export', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.data.success) {
+        const data = response.data.data;
+        
+        // Create workbook with multiple worksheets
+        const workbook = XLSX.utils.book_new();
+        
+        // Create Summary worksheet
+        const summaryData = [
+          ['Metric', 'Value'],
+          ['Total Apartments', data.summary.totalApartments],
+          ['Total Bookings', data.summary.totalBookings],
+          ['Total Users', data.summary.totalUsers],
+          ['Total Payments', data.summary.totalPayments],
+          ['Total Revenue', `€${data.summary.totalRevenue}`],
+          ['Total Paid', `€${data.summary.totalPaid}`],
+          ['Total Due', `€${data.summary.totalDue}`],
+          ['Paid Bookings', data.summary.paidBookings],
+          ['Unpaid Bookings', data.summary.unpaidBookings],
+          ['Export Date', new Date(data.summary.exportDate).toLocaleString()]
+        ];
+        const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+
+        // Create Apartments worksheet
+        const apartmentsData = [
+          ['ID', 'Name', 'Created At', 'Updated At'],
+          ...data.apartments.map(apt => [
+            apt.id,
+            apt.name,
+            formatDate(apt.createdAt),
+            formatDate(apt.updatedAt)
+          ])
+        ];
+        const apartmentsSheet = XLSX.utils.aoa_to_sheet(apartmentsData);
+        XLSX.utils.book_append_sheet(workbook, apartmentsSheet, 'Apartments');
+
+        // Create Bookings worksheet
+        const bookingsData = [
+          ['ID', 'Apartment', 'Client Name', 'Phone', 'Email', 'Booking Date', 
+           'Check In', 'Check Out', 'Price (€)', 'Advance (€)', 'Total Paid (€)', 
+           'Due (€)', 'Guests', 'Status', 'Special Note', 'Created At'],
+          ...data.bookings.map(booking => [
+            booking.id,
+            booking.apartmentName,
+            booking.clientName,
+            booking.phone || '',
+            booking.email || '',
+            formatDate(booking.bookingDate),
+            formatDate(booking.checkIn),
+            formatDate(booking.checkOut),
+            booking.price,
+            booking.advance,
+            booking.totalPaid,
+            booking.dueAmount,
+            booking.guests,
+            booking.paid ? 'Paid' : 'Unpaid',
+            booking.specialNote || '',
+            formatDate(booking.createdAt)
+          ])
+        ];
+        const bookingsSheet = XLSX.utils.aoa_to_sheet(bookingsData);
+        XLSX.utils.book_append_sheet(workbook, bookingsSheet, 'Bookings');
+
+        // Create Payments worksheet
+        const paymentsData = [
+          ['Booking ID', 'Apartment', 'Client Name', 'Payment Date', 
+           'Amount (€)', 'Method', 'Note', 'Created At'],
+          ...data.payments.map(payment => [
+            payment.bookingId,
+            payment.apartmentName,
+            payment.clientName,
+            formatDate(payment.paymentDate),
+            payment.amount,
+            payment.method,
+            payment.note || '',
+            formatDate(payment.createdAt)
+          ])
+        ];
+        const paymentsSheet = XLSX.utils.aoa_to_sheet(paymentsData);
+        XLSX.utils.book_append_sheet(workbook, paymentsSheet, 'Payments');
+
+        // Create Users worksheet
+        const usersData = [
+          ['ID', 'Email', 'Created At', 'Updated At'],
+          ...data.users.map(user => [
+            user.id,
+            user.email,
+            formatDate(user.createdAt),
+            formatDate(user.updatedAt)
+          ])
+        ];
+        const usersSheet = XLSX.utils.aoa_to_sheet(usersData);
+        XLSX.utils.book_append_sheet(workbook, usersSheet, 'Users');
+
+        // Generate and download the Excel file
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        downloadFile(blob, 'bait_database_export.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        alert('Export completed! Check your downloads folder for the Excel file with multiple sheets.');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Export failed. Please try again.');
+    }
+  };
+
+  const downloadFile = (blob, filename, mimeType) => {
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="min-h-screen bg-white text-black py-8">
       <div className="container px-4">
@@ -362,7 +490,7 @@ function Home({ setIsAuthenticated }) {
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div>
               <h1 className="text-4xl font-extrabold mb-2">🏢 Apartment Manager</h1>
-              <p className="text-gray-400 text-lg">Bentornato a casa! Hai effettuato l’accesso.</p>
+              <p className="text-gray-400 text-lg">Bentornato a casa! Hai effettuato l'accesso.</p>
             </div>
             <div className="flex gap-2">
               <button
@@ -400,6 +528,13 @@ function Home({ setIsAuthenticated }) {
           <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
             <h2 className="text-2xl font-bold text-black flex items-center gap-2">Elenco appartamenti <span className="text-base text-gray-500">({total})</span></h2>
             <div className="flex flex-col sm:flex-row items-center gap-4">
+              <button
+                className="btn btn-green btn-sm"
+                onClick={exportToExcel}
+                title="Export all data to Excel (CSV files)"
+              >
+                📊 Esporta dati
+              </button>
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={() => navigate('/clients')}
