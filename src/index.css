@@ -172,6 +172,22 @@ textarea {
     transform: translateY(-1px);
 }
 
+.btn-green {
+    background-color: #10b981;
+    color: #ffffff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-green:hover {
+    background-color: #059669;
+    transform: translateY(-1px);
+}
+
 .btn-sm {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
