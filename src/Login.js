@@ -21,7 +21,7 @@ function Login({ setIsAuthenticated }) {
     }
     setLoading(true);
     try {
-      const res = await axios.post('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/login', { email, password });
+      const res = await axios.post('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/login', { email, password });
       setSuccess('Login successful!');
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('userEmail', email);
