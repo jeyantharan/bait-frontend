@@ -38,7 +38,7 @@ function Clients() {
   const fetchGroups = async (searchTerm = '', phoneSearchTerm = '') => {
     setLoading(true);
     try {
-      const res = await axios.get('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/clients', {
+      const res = await axios.get('https://backend-d1ri3v5qm-jeys-projects-10abfd47.vercel.app/api/clients', {
         params: { 
           search: searchTerm,
           phoneSearch: phoneSearchTerm,
@@ -308,8 +308,7 @@ function Clients() {
                         <div className="booking-details">
                           Price: <span className="font-semibold">€{b.price}</span> | Paid: <span className="font-semibold">€{getTotalPaid(b)}</span> | Mancano: <span className="font-semibold">€{getDue(b)}</span> | Stato: <span className={isBookingPaid(b) ? 'status-paid' : 'status-unpaid'}>{isBookingPaid(b) ? 'Pagato' : 'Non pagato'}</span>
                         </div>
-                        <div className="booking-details text-xs text-gray-500 mt-1">Special Note: {b.specialNote || 'N/A'}</div>
-                        <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.note || 'N/A'}</div>
+                        <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
                         <div className="mt-2 flex gap-2">
                           <button
                             className="flex items-center gap-1 bg-yellow-400 hover:bg-yellow-500 text-black px-2 py-1 rounded text-xs font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
@@ -404,7 +403,7 @@ function Clients() {
                     if (isEditingPayment) {
                       // Edit payment
                       try {
-                        const res = await axios.put('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings/payments', {
+                        const res = await axios.put('https://backend-d1ri3v5qm-jeys-projects-10abfd47.vercel.app/api/bookings/payments', {
                           bookingId: paymentsBooking._id,
                           paymentId: isEditingPayment,
                           payment: newPayment
@@ -416,7 +415,7 @@ function Clients() {
                         const totalPaid = (updated.payments || []).reduce((sum, p) => sum + Number(p.amount), 0);
                         const isPaid = Math.abs(Number(totalPaid) - Number(updated.price)) < 0.01 || Number(totalPaid) > Number(updated.price);
                         try {
-                          await axios.put('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings/paid', {
+                          await axios.put('https://backend-d1ri3v5qm-jeys-projects-10abfd47.vercel.app/api/bookings/paid', {
                             bookingId: updated._id,
                             paid: isPaid
                           });
@@ -435,7 +434,7 @@ function Clients() {
                     } else {
                       // Add payment
                       try {
-                        const res = await axios.post('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings/payments', {
+                        const res = await axios.post('https://backend-d1ri3v5qm-jeys-projects-10abfd47.vercel.app/api/bookings/payments', {
                           bookingId: paymentsBooking._id,
                           payment: newPayment
                         });
@@ -446,7 +445,7 @@ function Clients() {
                         const totalPaid = (updated.payments || []).reduce((sum, p) => sum + Number(p.amount), 0);
                         const isPaid = Math.abs(Number(totalPaid) - Number(updated.price)) < 0.01 || Number(totalPaid) > Number(updated.price);
                         try {
-                          await axios.put('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings/paid', {
+                          await axios.put('https://backend-d1ri3v5qm-jeys-projects-10abfd47.vercel.app/api/bookings/paid', {
                             bookingId: updated._id,
                             paid: isPaid
                           });
