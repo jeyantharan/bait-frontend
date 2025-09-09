@@ -101,7 +101,7 @@ function Home({ setIsAuthenticated }) {
 
   const fetchApartments = async (pageNum = 1, searchTerm = '') => {
     try {
-      const res = await axios.get('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/apartments', {
+      const res = await axios.get('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/apartments', {
         params: { page: pageNum, limit, search: searchTerm }
       });
       setApartments(res.data.apartments || []);
@@ -118,7 +118,7 @@ function Home({ setIsAuthenticated }) {
 
   useEffect(() => {
     if (selectedApartment && showModal) {
-      axios.get('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings', {
+      axios.get('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings', {
         params: { apartmentId: selectedApartment._id }
       })
         .then(res => {
@@ -168,7 +168,7 @@ function Home({ setIsAuthenticated }) {
       return;
     }
     try {
-      await axios.post('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/apartments', { name });
+      await axios.post('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/apartments', { name });
       setSuccess('Apartment created!');
       setName('');
       setPage(1);
@@ -360,7 +360,7 @@ function Home({ setIsAuthenticated }) {
   // Excel export functionality
   const exportToExcel = async () => {
     try {
-      const response = await axios.get('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/export', {
+      const response = await axios.get('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/export', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -674,7 +674,7 @@ function Home({ setIsAuthenticated }) {
 
                     try {
                       if (editingBooking) {
-                        await axios.put('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings', {
+                        await axios.put('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings', {
                           clientName: bookingForm.clientName,
                           phone: bookingForm.phone,
                           email: bookingForm.email,
@@ -692,7 +692,7 @@ function Home({ setIsAuthenticated }) {
                         setBookingSuccess('Prenotazione aggiornata..');
                         setEditingBooking(null);
                       } else {
-                        await axios.post('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings', {
+                        await axios.post('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings', {
                           ...bookingForm,
                           apartment: selectedApartment._id,
                           price: Number(bookingForm.price),
@@ -706,7 +706,7 @@ function Home({ setIsAuthenticated }) {
                         clientName: '', phone: '', email: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', specialNote: '', note: '', guests: '', paymentDate: ''
                       });
                       // Refresh bookings
-                      const res = await axios.get('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings', {
+                      const res = await axios.get('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings', {
                         params: { apartmentId: selectedApartment._id }
                       });
                       setBookings(res.data);
@@ -1495,7 +1495,7 @@ function Home({ setIsAuthenticated }) {
                                   setPaymentModalSuccess('');
                                   setIsEditingPayment(null);
                                   // Refresh bookings data to ensure we have the latest payment information
-                                  axios.get('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings', {
+                                  axios.get('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings', {
                                     params: { apartmentId: selectedApartment._id }
                                   }).then(res => {
                                     setBookings(res.data);
@@ -1725,7 +1725,7 @@ function Home({ setIsAuthenticated }) {
                               setIsEditingPayment(null);
                               setShowDateModal(false);
                               // Refresh bookings data to ensure we have the latest payment information
-                              axios.get('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings', {
+                              axios.get('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings', {
                                 params: { apartmentId: selectedApartment._id }
                               }).then(res => {
                                 setBookings(res.data);
@@ -1800,7 +1800,7 @@ function Home({ setIsAuthenticated }) {
                   return;
                 }
                 try {
-                  await axios.put('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings', {
+                  await axios.put('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings', {
                     ...paymentBooking,
                     advance: newAdvance,
                     paid: newAdvance >= paymentBooking.price,
@@ -1815,7 +1815,7 @@ function Home({ setIsAuthenticated }) {
                     setPaymentError('');
                     setPaymentSuccess('');
                     // Refresh bookings
-                    axios.get('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings', {
+                    axios.get('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings', {
                       params: { apartmentId: selectedApartment._id }
                     }).then(res => setBookings(res.data));
                   }, 1200);
@@ -1907,7 +1907,7 @@ function Home({ setIsAuthenticated }) {
                     if (isEditingPayment) {
                       // Edit payment
                       try {
-                        const res = await axios.put('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings/payments', {
+                        const res = await axios.put('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings/payments', {
                           bookingId: paymentsBooking._id,
                           paymentId: isEditingPayment,
                           payment: newPayment
@@ -1919,7 +1919,7 @@ function Home({ setIsAuthenticated }) {
                         const totalPaid = (updated.payments || []).reduce((sum, p) => sum + Number(p.amount), 0);
                         const isPaid = Math.abs(Number(totalPaid) - Number(updated.price)) < 0.01 || Number(totalPaid) > Number(updated.price);
                         try {
-                          await axios.put('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings/paid', {
+                          await axios.put('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings/paid', {
                             bookingId: updated._id,
                             paid: isPaid
                           });
@@ -1932,7 +1932,7 @@ function Home({ setIsAuthenticated }) {
                         setNewPayment({ date: '', amount: '', method: '', note: '' });
                         // Refresh bookings data to update the modal in real-time
                         try {
-                          const res = await axios.get('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings', {
+                          const res = await axios.get('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings', {
                             params: { apartmentId: selectedApartment._id }
                           });
                           setBookings(res.data);
@@ -1945,7 +1945,7 @@ function Home({ setIsAuthenticated }) {
                     } else {
                       // Add payment
                       try {
-                        const res = await axios.post('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings/payments', {
+                        const res = await axios.post('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings/payments', {
                           bookingId: paymentsBooking._id,
                           payment: newPayment
                         });
@@ -1956,7 +1956,7 @@ function Home({ setIsAuthenticated }) {
                         const totalPaid = (updated.payments || []).reduce((sum, p) => sum + Number(p.amount), 0);
                         const isPaid = Math.abs(Number(totalPaid) - Number(updated.price)) < 0.01 || Number(totalPaid) > Number(updated.price);
                         try {
-                          await axios.put('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings/paid', {
+                          await axios.put('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings/paid', {
                             bookingId: updated._id,
                             paid: isPaid
                           });
@@ -1968,7 +1968,7 @@ function Home({ setIsAuthenticated }) {
                         setNewPayment({ date: '', amount: '', method: '', note: '' });
                         // Refresh bookings data to update the modal in real-time
                         try {
-                          const res = await axios.get('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings', {
+                          const res = await axios.get('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings', {
                             params: { apartmentId: selectedApartment._id }
                           });
                           setBookings(res.data);
@@ -2036,7 +2036,7 @@ function Home({ setIsAuthenticated }) {
                   // Get user email from localStorage or you might need to store it during login
                   const userEmail = localStorage.getItem('userEmail') || 'admin@bait.com'; // Default fallback
                   
-                  await axios.post('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/changePassword', {
+                  await axios.post('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/changePassword', {
                     currentPassword: changePasswordForm.currentPassword,
                     newPassword: changePasswordForm.newPassword,
                     email: userEmail
@@ -2176,7 +2176,7 @@ function Home({ setIsAuthenticated }) {
                 }
 
                 try {
-                  await axios.put(`https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/apartments`, {
+                  await axios.put(`https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/apartments`, {
                     name: editApartmentName.trim()
                   }, {
                     params: { id: editingApartment._id }
@@ -2265,14 +2265,14 @@ function Home({ setIsAuthenticated }) {
                   className="btn btn-primary flex-1 bg-red-600 hover:bg-red-700"
                   onClick={async () => {
                     try {
-                      await axios.delete(`https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings`, {
+                      await axios.delete(`https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings`, {
                         params: { id: bookingToDelete._id }
                       });
                       
                       setDeleteBookingSuccess('Booking deleted successfully!');
                       
                       // Refresh bookings
-                      const res = await axios.get('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings', {
+                      const res = await axios.get('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings', {
                         params: { apartmentId: selectedApartment._id }
                       });
                       setBookings(res.data);
