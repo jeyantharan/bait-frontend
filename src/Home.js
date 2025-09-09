@@ -30,6 +30,7 @@ function Home({ setIsAuthenticated }) {
     paymentMethod: '',
     paymentDate: '',
     specialNote: '',
+    note: '',
     guests: ''
   });
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -244,7 +245,8 @@ function Home({ setIsAuthenticated }) {
     printWindow.document.write(`<div><strong>Pagato:</strong> €${totalPaid}</div>`);
     printWindow.document.write(`<div><strong>Mancano:</strong> €${booking.paid ? 0 : (booking.price - totalPaid)}</div>`);
     printWindow.document.write(`<div><strong>Stato:</strong> ${((Math.abs(Number(totalPaid) - Number(booking.price)) < 0.01) || (Number(totalPaid) > Number(booking.price))) ? 'Paid' : 'Non pagato'}</div>`);
-    printWindow.document.write(`<div><strong>Special Note:</strong> ${booking.specialNote || 'N/A'}</div>`);
+            printWindow.document.write(`<div><strong>Special Note:</strong> ${booking.specialNote || 'N/A'}</div>`);
+        printWindow.document.write(`<div><strong>Note:</strong> ${booking.note || 'N/A'}</div>`);
     printWindow.document.write('</body></html>');
     printWindow.document.close();
     printWindow.focus();
@@ -681,6 +683,7 @@ function Home({ setIsAuthenticated }) {
                           checkOut: bookingForm.checkOut,
                           price: Number(bookingForm.price),
                           specialNote: bookingForm.specialNote,
+                          note: bookingForm.note,
                           guests: Number(bookingForm.guests),
                           apartment: selectedApartment._id
                         }, {
@@ -694,12 +697,13 @@ function Home({ setIsAuthenticated }) {
                           apartment: selectedApartment._id,
                           price: Number(bookingForm.price),
                           advance: Number(bookingForm.advance) || 0,
-                          guests: Number(bookingForm.guests)
+                          guests: Number(bookingForm.guests),
+                          note: bookingForm.note
                         });
                         setBookingSuccess('Booking created successfully!');
                       }
                       setBookingForm({
-                        clientName: '', phone: '', email: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', specialNote: '', guests: '', paymentDate: ''
+                        clientName: '', phone: '', email: '', bookingDate: '', checkIn: '', checkOut: '', price: '', advance: '', paymentMethod: '', specialNote: '', note: '', guests: '', paymentDate: ''
                       });
                       // Refresh bookings
                       const res = await axios.get('https://backend-ruby-eight-64.vercel.app/api/bookings', {
@@ -740,6 +744,15 @@ function Home({ setIsAuthenticated }) {
                       value={bookingForm.email}
                       onChange={e => setBookingForm(f => ({ ...f, email: e.target.value }))}
                       placeholder="Enter email address"
+                    />
+                  </div>
+                  <div className="form-group vertical">
+                    <label className="input-label">Note Id</label>
+                    <textarea 
+                      className="input-field h-24 resize-y"
+                      value={bookingForm.note} 
+                      onChange={e => setBookingForm(f => ({ ...f, note: e.target.value }))} 
+                      placeholder="Additional notes..."
                     />
                   </div>
                   <div className="form-group vertical">
@@ -975,7 +988,8 @@ function Home({ setIsAuthenticated }) {
                                         <div className="text-xs mt-1">
                                         Stato: <span className={booking?.paid ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>{booking?.paid ? 'Pagato' : 'Non pagato'}</span>
                                         </div>
-                                        {booking?.specialNote && <div className="text-xs text-gray-500 italic mt-1">Note: {booking.specialNote}</div>}
+                                        {booking?.specialNote && <div className="text-xs text-gray-500 italic mt-1">Special Note: {booking.specialNote}</div>}
+                                        {booking?.note && <div className="text-xs text-gray-500 italic mt-1">Note: {booking.note}</div>}
                                       </div>
                                     </div>
                                   );
@@ -1073,6 +1087,7 @@ function Home({ setIsAuthenticated }) {
                           paymentMethod: '', 
                           paid: false, 
                           specialNote: '', 
+                          note: '', 
                           guests: '', 
                           paymentDate: '' 
                         }); 
@@ -1159,6 +1174,7 @@ function Home({ setIsAuthenticated }) {
                                       <div>Prezzo: €{hb.price}</div>
                                       <div>{hb.paid ? <span className="text-green-600 font-medium">Pagato</span> : <span className="text-red-600 font-medium">Non pagato</span>}</div>
                                       <div className="text-gray-500 text-xs">{hb.specialNote || 'No special note.'}</div>
+                        <div className="text-gray-500 text-xs">Note: {hb.note || 'No note.'}</div>
                                     </div>
                                   ))}
                                 </div>
@@ -1403,6 +1419,10 @@ function Home({ setIsAuthenticated }) {
                                   <span className="text-gray-500">📝</span>
                                   <span className="font-medium text-black">{b.specialNote || 'No special notes'}</span>
                                 </div>
+                                <div className="flex items-center gap-1 text-xs">
+                                  <span className="text-gray-500">📄</span>
+                                  <span className="font-medium text-black">{b.note || 'No note'}</span>
+                                </div>
                               </div>
                             </div>
 
@@ -1455,6 +1475,7 @@ function Home({ setIsAuthenticated }) {
                                     advance: '', // Don't set advance when editing
                                     paymentMethod: '', // Don't set payment method when editing
                                     specialNote: b.specialNote,
+                                    note: b.note || '',
                                     guests: b.guests,
                                     paymentDate: '' // Don't set payment date when editing
                                   });
@@ -1627,6 +1648,10 @@ function Home({ setIsAuthenticated }) {
                               <span className="text-gray-500">📝</span>
                               <span className="font-medium text-black">{b.specialNote || 'No special notes'}</span>
                             </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-500">📄</span>
+                              <span className="font-medium text-black">{b.note || 'No note'}</span>
+                            </div>
                           </div>
                         </div>
 
@@ -1679,6 +1704,7 @@ function Home({ setIsAuthenticated }) {
                                 advance: '', // Don't set advance when editing
                                 paymentMethod: '', // Don't set payment method when editing
                                 specialNote: b.specialNote,
+                                note: b.note || '',
                                 guests: b.guests,
                                 paymentDate: '' // Don't set payment date when editing
                               });
