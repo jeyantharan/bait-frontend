@@ -308,7 +308,8 @@ function Clients() {
                         <div className="booking-details">
                           Price: <span className="font-semibold">€{b.price}</span> | Paid: <span className="font-semibold">€{getTotalPaid(b)}</span> | Mancano: <span className="font-semibold">€{getDue(b)}</span> | Stato: <span className={isBookingPaid(b) ? 'status-paid' : 'status-unpaid'}>{isBookingPaid(b) ? 'Pagato' : 'Non pagato'}</span>
                         </div>
-                        <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.specialNote || 'N/A'}</div>
+                        <div className="booking-details text-xs text-gray-500 mt-1">Special Note: {b.specialNote || 'N/A'}</div>
+                        <div className="booking-details text-xs text-gray-500 mt-1">Note: {b.note || 'N/A'}</div>
                         <div className="mt-2 flex gap-2">
                           <button
                             className="flex items-center gap-1 bg-yellow-400 hover:bg-yellow-500 text-black px-2 py-1 rounded text-xs font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
