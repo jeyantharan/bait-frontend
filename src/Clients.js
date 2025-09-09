@@ -38,7 +38,7 @@ function Clients() {
   const fetchGroups = async (searchTerm = '', phoneSearchTerm = '') => {
     setLoading(true);
     try {
-      const res = await axios.get('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/clients', {
+      const res = await axios.get('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/clients', {
         params: { 
           search: searchTerm,
           phoneSearch: phoneSearchTerm,
@@ -404,7 +404,7 @@ function Clients() {
                     if (isEditingPayment) {
                       // Edit payment
                       try {
-                        const res = await axios.put('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings/payments', {
+                        const res = await axios.put('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings/payments', {
                           bookingId: paymentsBooking._id,
                           paymentId: isEditingPayment,
                           payment: newPayment
@@ -416,7 +416,7 @@ function Clients() {
                         const totalPaid = (updated.payments || []).reduce((sum, p) => sum + Number(p.amount), 0);
                         const isPaid = Math.abs(Number(totalPaid) - Number(updated.price)) < 0.01 || Number(totalPaid) > Number(updated.price);
                         try {
-                          await axios.put('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings/paid', {
+                          await axios.put('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings/paid', {
                             bookingId: updated._id,
                             paid: isPaid
                           });
@@ -435,7 +435,7 @@ function Clients() {
                     } else {
                       // Add payment
                       try {
-                        const res = await axios.post('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings/payments', {
+                        const res = await axios.post('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings/payments', {
                           bookingId: paymentsBooking._id,
                           payment: newPayment
                         });
@@ -446,7 +446,7 @@ function Clients() {
                         const totalPaid = (updated.payments || []).reduce((sum, p) => sum + Number(p.amount), 0);
                         const isPaid = Math.abs(Number(totalPaid) - Number(updated.price)) < 0.01 || Number(totalPaid) > Number(updated.price);
                         try {
-                          await axios.put('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/bookings/paid', {
+                          await axios.put('https://backend-5v9dozs75-jeys-projects-10abfd47.vercel.app/api/bookings/paid', {
                             bookingId: updated._id,
                             paid: isPaid
                           });
