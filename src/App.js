@@ -32,7 +32,7 @@ function App() {
       }
 
       try {
-        const response = await axios.post('https://backend-ruby-eight-64.vercel.app/api/verifyToken', {
+        const response = await axios.post('https://backend-dy1x692mj-jeys-projects-10abfd47.vercel.app/api/verifyToken', {
           token: token
         });
         
